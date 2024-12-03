@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <UserSecretsId>aspnet-ExamsSchedule-D7B8A9B8-E4EE-4FB6-ADD9-0DB57A86A633</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\DB_1\**" />
+    <Compile Remove="Models\DB_backup\**" />
+    <Compile Remove="Models\DB_old\**" />
+    <Content Remove="Models\DB_1\**" />
+    <Content Remove="Models\DB_backup\**" />
+    <Content Remove="Models\DB_old\**" />
+    <EmbeddedResource Remove="Models\DB_1\**" />
+    <EmbeddedResource Remove="Models\DB_backup\**" />
+    <EmbeddedResource Remove="Models\DB_old\**" />
+    <None Remove="Models\DB_1\**" />
+    <None Remove="Models\DB_backup\**" />
+    <None Remove="Models\DB_old\**" />
+  </ItemGroup>
+
+ 
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.8.0" />
+    <PackageReference Include="Blazored.Toast" Version="3.1.2" />
+    <PackageReference Include="BlazorStrap" Version="1.5.0" />
+    <PackageReference Include="EPPlus" Version="5.5.5" />
+    <PackageReference Include="Faso.Blazor.SpinKit" Version="1.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="3.1.8" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="3.1.10" />
+    <PackageReference Include="Microsoft.AspNetCore.ProtectedBrowserStorage" Version="0.1.0-alpha.19521.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.Design" Version="1.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="3.1.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.4" />
+    <PackageReference Include="Radzen.Blazor" Version="2.18.8" />
+    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+    <PackageReference Include="TimeZoneConverter" Version="3.4.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+  </ItemGroup>
+
+</Project>

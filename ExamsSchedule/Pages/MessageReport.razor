@@ -1,0 +1,558 @@
+﻿@page "/MessageReport"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<style>
+    .message-report-container label.lbl-filter {
+        font-weight: 600;
+        width: 160px;
+    }
+</style>
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Supervisor Message Reports</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Supervisor Message Reports</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content message-report-container">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="lbl-filter">Search Student</label>
+                                <RadzenTextBox @bind-Value="txtSearchStudent" Placeholder="Search by Student" Style="width: calc(100% - 180px); " />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="lbl-filter">Search Exam</label>
+                                <RadzenTextBox @bind-Value="txtSearchExam" Placeholder="Search by Exam" Style="width: calc(100% - 180px);" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="lbl-filter">Search Proctor</label>
+                                <RadzenTextBox @bind-Value="proctorSearch" Placeholder="Search Proctor" Style="width: calc(100% - 180px);" />
+                            </div>
+                            @*<div class="col-md-4">
+                                    <RadzenRadioButtonList @bind-Value=@rdoFilterLiveExam TValue="int">
+                                        <Items>
+                                            <RadzenRadioButtonListItem Text="All" Value="0" />
+                                            <RadzenRadioButtonListItem Text="Live Only" Value="1" />
+                                            <RadzenRadioButtonListItem Text="Ended Only" Value="2" />
+                                        </Items>
+                                    </RadzenRadioButtonList>
+                                </div>*@
+                        </div>
+                        <div class="row">
+                            @*<div class="col-md-4 mt-3">
+                                    <label class="lbl-filter">Search Proctor</label>
+                                    <RadzenTextBox @bind-Value="proctorSearch" Placeholder="Search Proctor" Style="width: calc(100% - 180px);" />
+                                </div>*@
+                            @*<div class="col-md-6 mt-3">
+                                    <div>
+                                        <label class="lbl-filter">Enter Date Range : </label><span>&nbsp;</span>
+                                        <RadzenDatePicker @bind-Value=@dateFilterFrom DateFormat="d"
+                                                          Placeholder="Start Date"
+                                                          Style="margin-right:4px" />
+
+                                        <RadzenDatePicker @bind-Value=@dateFilterTo
+                                                          Placeholder="End Date"
+                                                          DateFormat="d"
+                                                          Style="margin-right:4px" />
+                                    </div>
+                                </div>*@
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mt-2">
+                                <label></label>
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@GetFilteredRecords" Size="Radzen.ButtonSize.Medium"
+                                              Text="Search" Icon="search"></RadzenButton>
+
+                                @*Disabled="string.IsNullOrEmpty(txtSearchStudent) && string.IsNullOrEmpty(txtSearchExam)
+        && string.IsNullOrEmpty(proctorSearch) && !dateFilterFrom.HasValue && !dateFilterTo.HasValue"*@
+
+                                @if (!string.IsNullOrEmpty(txtSearchStudent) || !string.IsNullOrEmpty(txtSearchExam)
+                                 || !string.IsNullOrEmpty(proctorSearch) || dateFilterFrom.HasValue || dateFilterTo.HasValue || rdoFilterLiveExam >= 1)
+                                {
+                                    <span>&nbsp;</span>
+                                    <RadzenButton Click="@ClearFilters" Size="Radzen.ButtonSize.Medium"
+                                                  Text="Clear" Icon="clear" ButtonStyle="ButtonStyle.Light"></RadzenButton><span>&nbsp;</span>
+                                }
+                                <RadzenButton class="DatePickerBtn" Text="@DateRangeButtonText" ButtonStyle="ButtonStyle.Secondary" @bind-Value="DateRangeButtonText" Click="@(()=> Show())" Style="margin-left:20px" /><div hidden="@isHide" style="color: red;">Custom Date Range must be correct</div>
+                                <div hidden="@PopupVisibleDateRangePicker">
+                                    <div id="" class="daterangepicker show-ranges show-calendar opensright" style="">
+                                        <div class="ranges">
+                                            <ul>
+                                                <li class="@(rangeClass == "Today" ? "active" : "")" @onclick="@(()=> setDateRange("Today"))">Today</li><!--!-->
+                                                <li class="@(rangeClass == "Yesterday" ? "active" : "")" @onclick="@(()=> setDateRange("Yesterday"))">Yesterday</li><!--!-->
+                                                <li class="@(rangeClass == "Last7Days" ? "active" : "")" @onclick="@(()=> setDateRange("Last7Days"))">Last 7 Days</li><!--!-->
+                                                <li class="@(rangeClass == "Last30Days" ? "active" : "")" @onclick="@(()=> setDateRange("Last30Days"))">Last 30 Days</li><!--!-->
+                                                <li class="@(rangeClass == "ThisMonth" ? "active" : "")" @onclick="@(()=> setDateRange("ThisMonth"))">This Month</li><!--!-->
+                                                <li class="@(rangeClass == "LastMonth" ? "active" : "")" @onclick="@(()=> setDateRange("LastMonth"))">Last Month</li><!--!-->
+                                                <li class="@(rangeClass == "Custom" ? "active" : "")" @onclick="@(()=> setDateRange("Custom"))">Custom range</li><!--!-->
+                                            </ul>
+                                        </div>
+
+                                        <div class="drp-calendar left ">
+                                            @if (rangeClass != "Custom")
+                                            {
+                                                <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedFromDates", "MM/dd/yyyy"))" TimeOnly="false" DateFormat="d" Disabled="true" />
+                                            }
+                                            else
+                                            {
+                                                <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedFromDates", "MM/dd/yyyy"))" TimeOnly="false" DateFormat="d" Disabled="false" />
+
+                                            }
+
+
+                                        </div>
+                                        <div class="drp-calendar right">
+                                            @if (rangeClass != "Custom")
+                                            {
+                                                <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedToDates", "MM/dd/yyyy"))" DateFormat="d" Disabled="true" />
+
+                                            }
+                                            else
+                                            {
+                                                <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedToDates", "MM/dd/yyyy"))" DateFormat="d" Disabled="false" />
+
+                                            }
+                                        </div>
+
+                                        <div class="drp-buttons">
+                                            @if (rangeClass == "Custom")
+                                            {
+                                                <button class="cancelBtn btn btn-sm btn-default" type="button" @onclick="@(() => ClearDateRangePicker())">
+                                                    Clear
+                                                </button>
+                                                <button class="applyBtn btn btn-sm btn-secondary" type="button"
+                                                        disabled="@(!(SelectedFromDates.HasValue) || !(SelectedToDates.HasValue))"
+                                                        @onclick="@(() => ApplyDateRange())">
+                                                    Apply
+                                                </button>
+                                            }
+                                            <button class="cancelBtn btn btn-sm btn-default" type="button" @onclick="@(() => CloseDateRange())">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr />
+                                @*<RadzenButton Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel"))" Class="mb-4 mr-2" />
+        <RadzenButton Text="Export CSV" Icon="wrap_text" Click="@(args => Export("csv"))" Class="mb-4" />*@
+                            </div>
+                        </div>
+                        <div style="margin-left:20px;">
+                            @*<Radzen.Blazor.RadzenLabel Text="@PageCountDisplay"></Radzen.Blazor.RadzenLabel>*@
+                            @{ int currentCount = 0;
+                                if (MessageList != null)
+                                {
+                                    currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                }
+
+                            }
+                            @*  <b>Showing </b>@currentCount<b> to </b>@(MessageList != null ? (MessageList.Count() + currentCount) - 1 : 0) <b> of </b> @Count <b>entries</b>*@
+                        </div>
+                        @*<RadzenGrid Count="@Count" Data="@MessageList" LoadData="@LoadData" @ref="ordersGrid"
+                            AllowSorting="true" AllowFiltering="false"
+                            TItem="Models.DB.LiveProctorMessage">*@
+
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Text="Export XLS" Icon="grid_on" Click="@(args => Export("excel"))" Class="mb-4 mr-2" />
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Text="Export CSV" Icon="wrap_text" Click="@(args => Export("csv"))" Class="mb-4" />
+
+                        <RadzenGrid Count="@Count" Data="@MessageList" LoadData="@LoadData" @ref="ordersGrid"
+                                    AllowSorting="true" AllowFiltering="false" AllowPaging="false" PageSize="@PageSize"
+                                    TItem="Models.DB.LiveProctorMessage">
+                            <Columns>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="Message" Title="Message">
+                                    <Template Context="data">
+                                        @data.Message
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="SendBy" Title="Sent By" Width="180px">
+                                    <Template Context="data">
+                                        @data.User?.Email
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="StudentId" Title="Student">
+                                    <Template Context="data">
+                                        @data.ProctoringStatus?.Student?.FullName
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="ExamId" Title="Exam">
+                                    <Template Context="data">
+                                        @data.ProctoringStatus?.Exam?.ExameName
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="SendDate" Title="Date" Width="180px">
+                                    <Template Context="data">
+                                        @ConvertDateToRegion(data.SendDate)
+                                    </Template>
+                                </RadzenGridColumn>
+
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="Status" Title="Status" Width="120px">
+                                    <Template Context="data">
+                                        @if (data.Status == 0)
+                                        {
+                                            <span>Pending</span>
+                                        }
+                                        else if (data.Status == 1)
+                                        {
+                                            <span>Read</span>
+                                        }
+                                        else if (data.Status == 3)
+                                        {
+                                            <span>Approve</span>
+                                        }
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="WarningType" Title="Warning Type" Width="120px">
+                                    <Template Context="data">
+                                        @if (data.WarningType == 1)
+                                        {
+                                            <span class="badge" style="background-color: red; color: white;">Red</span>
+                                        }
+                                        else if (data.WarningType == 2)
+                                        {
+                                            <span class="badge" style="background-color: orange">Orange</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge" style="background-color: yellow">Yellow</span>
+                                        }
+
+                                    </Template>
+                                </RadzenGridColumn>
+                            </Columns>
+                        </RadzenGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using System;
+@using TimeZoneConverter;
+@using ExamsSchedule.Services
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject SearchStudentService searchStudentService
+@using Blazored.Toast.Services
+@using Radzen
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Identity
+@inject DialogService dialogService
+@inject StudentService studentService
+@inject LiveProctorService liveProctorService
+@inject IJSRuntime JsRuntime
+@inject IConfiguration Configuration
+@code {
+
+    public void Export(string type)
+    {
+        liveProctorService.Export(type, Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam);
+    }
+    public string DateRangeButtonText { get; set; } = "Choose dates..";
+    public bool isHide { get; set; } = true;
+    private bool PopupVisibleDateRangePicker { get; set; } = true;
+    private void Show()
+    {
+        PopupVisibleDateRangePicker = !PopupVisibleDateRangePicker;
+        StateHasChanged();
+    }
+    private void ShowError()
+    {
+        isHide = !isHide;
+        StateHasChanged();
+    }
+    DateTime? SelectedFromDates { get; set; } = null;
+    public string rangeClass { get; set; } = "Custom";
+    DateTime? SelectedToDates { get; set; } = null;
+    public string DateRegion;
+    private string filterByDays;
+    int Count;
+    int PageSize;
+    int Skip;
+    int Top;
+    int TotalCount;
+    string PageCountDisplay;
+    RadzenGrid<Models.DB.LiveProctorMessage> ordersGrid;
+    private List<Models.DB.LiveProctorMessage> MessageList;
+
+    DateTime? dateFilterFrom;
+    DateTime? dateFilterTo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        DateRegion = Configuration["DateRegion"];
+        spinnerService.Show();
+        PageSize = 10000;
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+    protected async System.Threading.Tasks.Task LoadData(LoadDataArgs args)
+    {
+        Skip = 0;// args.Skip.Value;
+        Top = 1000;//args.Top.Value;
+        await GetMessageReportListAsync();
+    }
+    public string txtSearchStudent { get; set; }
+    public string txtSearchExam { get; set; }
+    public string proctorSearch { get; set; }
+    public int rdoFilterLiveExam { get; set; }
+    public async Task ClearFilters()
+    {
+        txtSearchStudent = null;
+        txtSearchExam = null;
+        proctorSearch = null;
+        rdoFilterLiveExam = 0;
+        dateFilterFrom = null;
+        dateFilterTo = null;
+        await GetMessageReportListAsync();
+    }
+    //public void Export(string type)
+    //{
+    //    service.Export("Supervisor Message Report", type, new Query() { OrderBy = grid.Query.OrderBy, Filter = grid.Query.Filter });
+    //    var excelBytes = ExcelService.GenerateExcelWorkbook();
+    //    js.InvokeVoidAsync("saveAsFile", $"test_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx", Convert.ToBase64String(excelBytes));
+    //}
+
+
+    public async Task GetMessageReportListAsync()
+    {
+        MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam,null,null);
+        Count = await liveProctorService.GetMessageReportDataCountAsync(txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam);
+        PageCountDisplay = $"Total Students : {Count}";
+        ordersGrid.GoToPage(0);
+    }
+
+    public async Task GetFilteredRecords()
+    {
+        Skip = 0;
+        Top = 1000;
+        MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam,SelectedFromDates,SelectedToDates);
+        Count = await liveProctorService.GetMessageReportDataCountAsync(txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam);
+        PageCountDisplay = $"Total Students : {Count}";
+        ordersGrid.GoToPage(0);
+    }
+
+    public string ConvertDateToRegion(DateTime date)
+    {
+
+        if (DateRegion != null)
+        {
+            TimeZoneInfo tzi = TZConvert.GetTimeZoneInfo(DateRegion);
+            DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(date, tzi);
+            return cstTime.ToString("MM/dd/yyyy hh:mm:ss");
+        }
+        else
+        {
+            return DateRegion;
+        }
+    }
+    void OnChange(DateTime? value, string name, string format)
+    {
+        if (name == "SelectedFromDates")
+        {
+            SelectedFromDates = (DateTime)value;
+        }
+        else
+        {
+            SelectedToDates = (DateTime)value;
+        }
+    }
+    public async void ClearDateRangePicker()
+    {
+        SelectedFromDates = null;
+        SelectedToDates = null;
+        PopupVisibleDateRangePicker = true;
+        DateRangeButtonText = "Choose dates..";
+        spinnerService.Show();
+        MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, null, null);
+        //SearchStudentList = record;
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+    private void CloseDateRange()
+    {
+        ClearDateRangePicker();
+    }
+    private async void ApplyDateRange()
+    {
+        PopupVisibleDateRangePicker = true;
+
+        if (rangeClass == "Custom")
+        {
+            if (SelectedFromDates.HasValue && SelectedToDates.HasValue)
+            {
+                if (SelectedToDates.Value < SelectedFromDates.Value)
+                {
+                    ShowError();
+                }
+                else
+                {
+                    isHide = true;
+                    DateRangeButtonText = SelectedFromDates?.ToString("MM/dd/yyyy") + " - " + SelectedToDates?.ToString("MM/dd/yyyy");
+                    spinnerService.Show();
+                    MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, SelectedFromDates, SelectedToDates);
+                    //SearchStudentList = record;
+                    spinnerService.Hide();
+                }
+            }
+            else
+            {
+                DateRangeButtonText = "Choose dates..";
+            }
+        }
+        StateHasChanged();
+    }
+    private async void setDateRange(string range)
+    {
+        if (range == "Today")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            //var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            DateRangeButtonText = start.ToString("MM/dd/yyyy"); // + " - " + last.ToString("MM/dd/yyyy");
+            SelectedFromDates = start;
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, start, null);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Yesterday")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-1));
+            //SelectedToDates.Add(new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-1));
+            DateRangeButtonText = start.ToString("MM/dd/yyyy");
+            SelectedFromDates = start;
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, start, null);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Last7Days")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-7));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, start, last);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Last30Days")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-30));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam, start, last);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "ThisMonth")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam,start,last);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "LastMonth")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, (DateTime.Now.Month - 1), 1));
+            var last = (new DateTime(DateTime.Now.Year, (DateTime.Now.Month - 1), 1).AddMonths(1).AddDays(-1));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            MessageList = await liveProctorService.GetMessageReportsDataAsync(Skip, Top, txtSearchStudent, txtSearchExam, proctorSearch, dateFilterFrom, dateFilterTo, rdoFilterLiveExam);
+            //SearchStudentList = record;
+            spinnerService.Hide();
+        }
+
+        rangeClass = range;
+        if (range != "Custom")
+        {
+            PopupVisibleDateRangePicker = true;
+        }
+        StateHasChanged();
+    }
+
+
+}
+<style>
+    .disable-dates-container {
+        pointer-events: none;
+        opacity: 0.4;
+    }
+
+    .daterangepicker {
+        position: relative !important;
+    }
+
+    .date .ui-datepicker:not(.ui-datepicker-inline) {
+        z-index: 1050;
+    }
+
+    .ui-dropdown-panel.ui-widget.ui-widget-content.ui-corner-all.ui-shadow.ui-popup {
+        z-index: 3002 !important;
+    }
+
+    .daterangepicker .drp-calendar.right {
+        padding: 8px;
+    }
+
+    .daterangepicker .drp-calendar.left {
+        padding: 8px;
+        margin-right: 70px !important;
+    }
+
+    .DatePickerBtn {
+        background-color: #479cc8 !important;
+        margin-bottom: 10px;
+    }
+
+    .ui-dropdown-label.ui-inputtext.ui-corner-all {
+        height: 22px;
+        padding: 0px;
+        margin: 0px;
+    }
+</style>

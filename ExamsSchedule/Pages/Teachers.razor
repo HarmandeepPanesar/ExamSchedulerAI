@@ -1,0 +1,149 @@
+﻿@page "/faculty"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Proctor List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Proctor List</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-12">
+                            <div style="text-align:right; margin-bottom:10px; margin-top:10px; margin-right:20px;">
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary"  Click="@ShowModal" Size="Radzen.ButtonSize.Medium" Text="Add New Proctor" Icon="add"></RadzenButton>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true"
+                                    AllowSorting="true" Data="@users" TItem="IdentityUser" PageSize="@PageSize" @ref="ordersGrid">
+                            <Columns>
+
+                                <RadzenGridColumn TItem="IdentityUser" Property="UserName" Title="UserName">
+                                    <FooterTemplate>
+                                        @{
+                                            int currentCount = 0;
+                                            if (users != null)
+                                            {
+                                                currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                            }
+                                        }
+                                        <b>Showing </b>@currentCount<b> to </b>@(users != null ? (users.Count()+ currentCount)-1 : 0) <b> of </b> @TotalCount <b>entries</b>
+                                    </FooterTemplate>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="IdentityUser" Property="Email" Title="Email" />
+
+                                <RadzenGridColumn TItem="IdentityUser" Context="sampleBlazorModelsSampleOrder" Bubble="false" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Width="100px">
+                                    <Template Context="AspNetUsers">
+                                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="edit" Size="ButtonSize.Small" Click="@(args => editRow(AspNetUsers))">
+                                        </RadzenButton>
+                                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.Small" Click="@(args =>deleteRow(AspNetUsers))">
+                                        </RadzenButton>
+                                    </Template>
+                                </RadzenGridColumn>
+
+                            </Columns>
+                        </RadzenGrid>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using ExamsSchedule.Models.DB
+@using Microsoft.AspNetCore.Identity
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject StudentService studentService
+@inject IConfiguration Configuration
+@inject IJSRuntime JsRuntime
+@inject TeacherService teacherService
+@using Microsoft.Extensions.Configuration
+@code
+{
+    RadzenGrid<IdentityUser> ordersGrid;
+    private EditContext editContext;
+    private IList<IdentityUser> users;
+    int TotalCount = 0;
+    int PageSize;
+    protected override async Task OnInitializedAsync()
+    {
+        PageSize = Convert.ToInt32(Configuration["pageSize"]);
+        await GetUsersAsync();
+    }
+
+    public async Task GetUsersAsync()
+    {
+        users = await teacherService.GetAllDataAsync();
+        TotalCount = users.Count();
+        StateHasChanged();
+    }
+
+    async Task ShowModal()
+    {
+        var result = await dialogService.OpenAsync<DialogTeacherPage>("Add New Record", null
+            , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+
+    public async Task editRow(IdentityUser teacher)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("SelectedTeacher", new RegisterViewModel
+        {
+            Id = teacher.Id,
+            Email = teacher.Email
+        });
+        var result = await dialogService.OpenAsync<DialogTeacherPage>("Add New Record", param
+            , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetUsersAsync();
+            StateHasChanged();
+        }
+    }
+
+    public async Task deleteRow(IdentityUser teacher)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure,you want to delete?");
+        if (confirmed)
+        {
+            spinnerService.Show();
+            await teacherService.DeleteTeacher(teacher);
+            await GetUsersAsync();
+            spinnerService.Hide();
+            toastService.ShowSuccess("Record is deleted Successfully");
+        }
+    }
+}

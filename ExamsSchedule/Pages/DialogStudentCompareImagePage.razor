@@ -1,0 +1,38 @@
+﻿@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using ExamsSchedule.Services
+
+
+<div class="row">
+    <div class="col-6">
+        <img src="@img" alt="@imageName" style="max-width: 350px;" />
+    </div>
+    <div class="col-6">
+        <img src="@refImg" alt="@refImageName" style="max-width: 350px;" />
+    </div>
+</div>
+
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@code {
+    [Parameter]
+    public string imageName { get; set; }
+
+    [Parameter]
+    public string refImageName { get; set; }
+
+    public string blobBaseURL { get; set; }
+
+    string img = "";
+    string refImg = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+        img = blobBaseURL + "/studentidentity/" + @imageName;
+
+        refImg = blobBaseURL + "/save-image-blob/" + @refImageName;
+
+        StateHasChanged();
+    }
+}

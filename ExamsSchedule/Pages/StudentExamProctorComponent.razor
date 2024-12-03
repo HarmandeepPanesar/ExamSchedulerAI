@@ -1,0 +1,597 @@
+﻿@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using TimeZoneConverter;
+@inject NavigationManager MyNavigationManager
+@inject IConfiguration Configuration
+
+@{
+    string CurrentUrl = MyNavigationManager.Uri;
+}
+@if (CurrentUrl.Contains("/liveproctor"))
+{
+    <h4>Total Live Students: @SearchStudentList.Count()</h4>
+}
+<RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive"
+            FilterMode="Radzen.FilterMode.Advanced"
+            AllowPaging="true" PageSize="PageSize" Data="@SearchStudentList" @ref="ordersGrid" ExpandMode="DataGridExpandMode.Single"
+            AllowSorting="true" TItem="Models.DB.PExamStudentProctoringStatus" ColumnWidth="120px">
+    <Columns>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StudentId" Title="Id" Width="150px">
+            <Template Context="data">
+                @data.Student?.StudentUniqueId
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StudentId" Title="Name" Width="160px">
+            <Template Context="data">
+                @if (data.Student.ImageName != null)
+                {
+                    <a @onclick="@(args=>ShowImageModal(data.Student.ImageName))" style="cursor: pointer;">@data.Student?.FullName&nbsp;&nbsp;<i class="fas fa-image"></i></a>
+                }
+                else
+                {
+                    @data.Student?.FullName
+                }
+            </Template>
+            <FooterTemplate>
+                @if (CurrentUrl.Contains("/liveproctor"))
+                {
+
+                    int currentCount = 0;
+                    if (SearchStudentList != null)
+                    {
+                        currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                    }
+
+                    @currentCount<b> to </b>@(SearchStudentList != null ? ((ordersGrid.CurrentPage * PageSize)) + PageSize : 0) <b> of </b> @SearchStudentList.Count(); <b> entries</b>
+                }
+            </FooterTemplate>
+        </RadzenGridColumn>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="ExamId" Title="Exam">
+            <Template Context="data">
+                @data.Exam?.ExameName
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="InitialFaceVerificationPassed" Title="Verified" Width="70px">
+            <Template Context="data">
+
+                @if (data.InitialFaceVerificationPassed.HasValue && data.InitialFaceVerificationPassed.Value)
+                {
+                    <span class="badge badge-success" data-toggle="tooltip" title="Passed">Passed</span>
+                }
+                @if (data.InitialFaceVerificationPassed.HasValue && !data.InitialFaceVerificationPassed.Value)
+                {
+                    <a class="badge badge-danger" @onclick="@(args=>ShowCompareImageModal(data.Student.ImageName,data.ReferenceImage))" style="cursor: pointer;" data-toggle="tooltip" title="Failed">Failed</a>
+                }
+
+            </Template>
+        </RadzenGridColumn>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="ImpersonationCheckPassed" Title="Spoof" Width="55px">
+            <Template Context="data">
+
+                @if (data.ImpersonationCheckPassed.HasValue && data.ImpersonationCheckPassed.Value)
+                {
+                    @*<span class="badge badge-success">No</span>*@
+                    <a class="badge badge-success" @onclick="@(args=>ShowImpersonationImageModal(data.Id))" style="cursor: pointer;" data-toggle="tooltip" title="No">No</a>
+                }
+                @if (data.ImpersonationCheckPassed.HasValue && !data.ImpersonationCheckPassed.Value)
+                {
+                    <a class="badge badge-danger" @onclick="@(args=>ShowImpersonationImageModal(data.Id))" style="cursor: pointer;" data-toggle="tooltip" title="Yes">Yes</a>
+                }
+
+            </Template>
+        </RadzenGridColumn>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StartedAt" Title="StartTime" Width="160px">
+            <Template Context="data">
+
+                @if (data.StartedAt.HasValue)
+                {
+                    <span>
+                        @ConvertDateToRegion(data.StartedAt.Value)
+                    </span>
+                }
+            </Template>
+        </RadzenGridColumn>
+        @if (!CurrentUrl.Contains("/liveproctor"))
+        {
+            <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="EndedAt" Title="Ended" Width="170px">
+                <Template Context="data">
+                    @if (data.EndedAt.HasValue)
+                    {
+                        <span>
+                            @ConvertDateToRegion(data.EndedAt.Value)
+                        </span>
+                    }
+                </Template>
+            </RadzenGridColumn>
+        }
+
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Eventcount" Title="Events" Filterable="false" Width="170px">
+            <Template Context="data">
+                @if (data.Eventcount.HasValue)
+                {
+                    var str = "";
+                    if (data.Eventcount.Value == 0)
+                    {
+                        str = "badge-success";
+                        <a class="badge @str" data-toggle="tooltip" title="@data.Eventcount">@data.Eventcount</a>
+                    }
+                    else
+                    {
+                        if ((data.PhoneDetected.HasValue && data.EyeGazeDetected.HasValue) || data.MultiPersonDetected.HasValue || data.NoPersonDetected.HasValue)
+                        {
+                            str = "badge-danger";
+                        }
+                        else if ((data.PhoneDetected.HasValue && data.Eventcount.Value >= 30))
+                        {
+                            str = "badge-danger";
+                        }
+                        else if (data.Eventcount.Value > 30 && data.Eventcount.Value < 100)
+                        {
+                            str = "badge-warning";
+                        }
+                        else if (data.Eventcount.Value >= 100)
+                        {
+                            str = "badge-danger";
+                        }
+                        else if (data.Eventcount.Value <= 30 && data.PhoneDetected.HasValue)
+                        {
+                            str = "badge-warning";
+                        }
+                        else if (data.Eventcount.Value <= 30 && data.NoPersonDetected.HasValue)
+                        {
+                            str = "badge-warning";
+                        }
+                        else if (data.Eventcount.Value <= 30)
+                        {
+                            str = "badge-warning";
+                        }
+
+                        <a class="badge  @str" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId, data.SessionId,null))" style="cursor: pointer;" data-toggle="tooltip" title="@data.Eventcount">@data.Eventcount</a>
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Size="Radzen.ButtonSize.Small" Click="@((args)=>ShowEventsModal(data.Id, data.StudentId,data.ExamId,null,data.SessionId))" Text="" Icon="list" data-toggle="tooltip" title="Events"></RadzenButton>
+                    }
+                }
+
+                @if (data.PhoneDetected.HasValue == true)
+                {
+                    <i class="fa fa-mobile pl-2" data-toggle="tooltip" title="Object detected near examinee" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId, "Mobile_Phone_detected"))" style="cursor: pointer;"></i>
+                }
+
+                @if (data.NoPersonDetected.HasValue == true)
+                {
+                    <i class="fa fa-user-times pl-2" data-toggle="tooltip" title="Examinee missing in action" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId ,"No_Person_detected"))" style="cursor: pointer;"></i>
+                }
+
+                @if (data.MultiPersonDetected.HasValue == true)
+                {
+                    <i class="fa fa-users pl-2" data-toggle="tooltip" title="Multiple people detected" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId,"More_than_one_person_detected"))" style="cursor: pointer;"></i>
+                }
+                @if (data.EyeGazeDetected.HasValue == true)
+                {
+                    <i class="fa fa-low-vision pl-2" data-toggle="tooltip" title="Examinee seems to be looking away" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId,"looking_away"))" style="cursor: pointer;"></i>
+                }
+
+            </Template>
+        </RadzenGridColumn>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StudentId" Title="Alert" Filterable="false" Width="70px">
+            <Template Context="data">
+                @if (data.Eventcount.HasValue)
+                {
+                    if (data.Eventcount.Value == 0)
+                    {
+                        <a class="badge badge-success"><i class="fas fa-thumbs-up"></i></a>
+                    }
+                    else if ((data.PhoneDetected.HasValue && data.EyeGazeDetected.HasValue) || data.MultiPersonDetected.HasValue || data.NoPersonDetected.HasValue)
+                    {
+                        <a class="badge badge-danger" data-toggle="tooltip" title="High">High</a>
+                    }
+                    else if ((data.PhoneDetected.HasValue && data.Eventcount.Value >= 30))
+                    {
+                        <a class="badge badge-danger" data-toggle="tooltip" title="High">High</a>
+                    }
+                    else if (data.Eventcount.Value <= 30 && data.PhoneDetected.HasValue)
+                    {
+                        <a class="badge badge-warning" data-toggle="tooltip" title="Medium">Medium</a>
+                    }
+                    else if (data.Eventcount.Value <= 30 && data.NoPersonDetected.HasValue)
+                    {
+                        <a class="badge badge-warning" data-toggle="tooltip" title="Medium">Medium</a>
+                    }
+                    else if (data.Eventcount.Value <= 30)
+                    {
+                        <a class="badge badge-warning" data-toggle="tooltip" title="Medium">Medium</a>
+                    }
+
+                    else if (data.Eventcount.Value < 30)
+                    {
+                        <a class="badge badge-success" data-toggle="tooltip" title="Low">Low</a>
+                    }
+                    else if (data.Eventcount.Value > 30 && data.Eventcount.Value < 100)
+                    {
+                        <a class="badge badge-warning" data-toggle="tooltip" title="Medium">Medium</a>
+                    }
+                    else if (data.Eventcount.Value >= 100)
+                    {
+                        <a class="badge badge-danger" data-toggle="tooltip" title="High">High</a>
+                    }
+                }
+            </Template>
+        </RadzenGridColumn>
+
+        <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Id" Title="Status" Width="110px">
+            <Template Context="data">
+               
+                @if (data.MessageStatus.HasValue)
+                {
+                    if (data.MessageStatus.Value == 3)
+                    {
+                        <span class="badge badge-success" data-toggle="tooltip" title="Approved">Approved</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-danger" data-toggle="tooltip" title="Flagged">Flagged</span>
+                    }
+
+                }
+                @if (data.PProctroingEvaluation != null && data.PProctroingEvaluation.Count() > 0)
+                {
+                    var status = @data.PProctroingEvaluation.FirstOrDefault()?.ProctoringStatus;
+
+
+                    if (status.HasValue)
+                    {
+                        if (status.Value == 50)
+                        {
+                            <span data-toggle="tooltip" title="Approve">Approve</span>
+                        }
+                        if (status.Value == 30)
+                        {
+                            <span data-toggle="tooltip" title="Flag">Flag</span>
+                        }
+                        if (status.Value == 60)
+                        {
+                            <span data-toggle="tooltip" title="Remind">Remind</span>
+                        }
+                        if (status.Value == 70)
+                        {
+                            <span class="badge badge-danger" data-toggle="tooltip" title="Red">Red</span>
+                        }
+                        if (status.Value == 80)
+                        {
+                            <span class="badge badge-warning" data-toggle="tooltip" title="Yellow">Yellow</span>
+                        }
+                        if (status.Value == 90)
+                        {
+                            <span class="badge" style="color: #fff; background-color: #ffa500;" data-toggle="tooltip" title="Orange">Orange</span>
+                        }
+
+                    }
+
+                }
+
+
+
+
+            </Template>
+        </RadzenGridColumn>
+        @*@if (CurrentUrl.Contains("/liveproctor"))
+        {
+            <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="SessionId" Title="Video" Width="75px" Filterable="false" Sortable="false">
+                <Template Context="data">
+                    @if (data.SessionId != null)
+                    {
+                        <RadzenButton Size="Radzen.ButtonSize.Small" Text="Live" class="btn-toggler" data-sessionid="@data.SessionId" Icon="" Click="@(args=>ShowVideomodal(data.Id,data))"></RadzenButton>
+                    }
+                    @if (data.LiveVideo == true)
+                    {
+                        <i class="fa fa-circle pl-3" style="color: red;font-size: smaller;" @onclick="@(args=>ShowVideoDialogModal(data.Id,data.SessionId,data.Student.FullName,data.Student.StudentUniqueId))"></i>
+                    }
+
+                </Template>
+            </RadzenGridColumn>
+        }*@
+
+        @*@if (CurrentUrl.Contains("/liveproctor"))
+        {
+            <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="NeedAssistance" Title="Assistance" Width="90px" Filterable="false" Sortable="false">
+                <Template Context="data">
+                    @if (data.NeedAssistance)
+                    {
+                        <a class="badge badge-success" data-toggle="tooltip" title="Need Assistance"><i class="fas fa-hand-papar"></i> Need Assistance</a>
+                        <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>NeedAssitance(false , data))" Text="Acknowledge" Icon=""></RadzenButton>
+                    }
+
+                </Template>
+            </RadzenGridColumn>
+        }*@
+        @if (CurrentUrl.Contains("/searchstudent"))
+        {
+            <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Id" Title="Flags" Filterable="false" Sortable="false" Width="190px">
+                <Template Context="data">
+                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Size="Radzen.ButtonSize.Small" Click="@((args) => ShowMessageModal(data.Id, data.StudentId, data.ExamId, null, data.SessionId, @data.Student?.FullName))" Text="" Icon="message" data-toggle="tooltip" title="Message" Style="@yourStyle"></RadzenButton>
+                </Template>
+            </RadzenGridColumn>
+        }
+        @if (CurrentUrl.Contains("/liveproctor"))
+        {
+            <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Id" Title="Flags" Filterable="false" Sortable="false" Width="190px">
+                <Template Context="data">
+                    <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 50 , "Approve"))" Text="" Style="background-color: green; color:black" Icon="check" data-toggle="tooltip" title="Approve"></RadzenButton>
+                    <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 3, "Flag"))" Text="" Icon="flag" data-toggle="tooltip" title="Flag"></RadzenButton>
+                    <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 3, "Yellow"))" Style="background-color: yellow; color:black" Icon="panorama_photosphere_select"></RadzenButton>
+                    <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 2, "Orange"))" Style="background-color: orange;color: black" Icon="photo_camera"></RadzenButton>
+                    <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 1, "Red"))" Style="background-color: Red;color: black" Icon="people_outline"></RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Secondary"  Size="Radzen.ButtonSize.Small" Click="@((args)=>ShowMessageModal(data.Id, data.StudentId,data.ExamId,null,data.SessionId, data.Student?.FullName))"
+                                              Text="" Icon="message" data-toggle="tooltip" title="Message"></RadzenButton>
+                            </Template>
+            </RadzenGridColumn>
+        }
+    </Columns>
+</RadzenGrid>
+
+
+<div id="test" class="container bootsidemenu default bootsidemenu-right" style="width: 15%;display: none;">
+    <div class="menu-wrapper">
+        <div class="list-group">
+            @if (videoRunning == null || videoRunning.Count == 0)
+            {
+                <div>No Video Available.</div>
+            }
+            else
+            {
+                @foreach (var item in videoRunning)
+                {
+                    <div class="video-block">
+                        <div>
+                            <i>@item.Student?.FullName - SUID: @item.Student?.StudentUniqueId</i>
+                        </div>
+                        <iframe src="@videoURL?vurl=@item.SessionId"
+                                width="100%" height="100%" scrolling="auto" allow="microphone;camera">
+                        </iframe>
+                        <div>
+                            <button @onclick="@(args=>CloseVideomodal(0,item))" class="btn btn-sm btn-block btn-danger" type="button" style="float: right;">Close</button>
+                        </div>
+                    </div>
+                }
+            }
+
+        </div>
+    </div>
+    <div class="hide-slider toggler" data-whois="toggler">
+        @*<span class="glyphicon glyphicon-chevron-left icon">*@&nbsp;<i class="fa fa-angle-right pl-1 mt-3"></i>@*</span>*@
+    </div>
+</div>
+
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject ExamStudentService ExamStudentService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@inject ExamService ExamService
+@inject SearchStudentService searchStudentService
+@inject StudentFacultyService studentFacultyService
+@inject IJSRuntime JsRuntime
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using Microsoft.AspNetCore.Identity
+
+@code {
+    string yourStyle = "";
+    int PageSize;
+    RadzenGrid<Models.DB.PExamStudentProctoringStatus> ordersGrid;
+    //private IList<Models.DB.PExamStudentProctoringStatus> SearchStudentList;
+    public string DateRegion { get; set; }
+
+    public string ConvertDateToRegion(DateTime date)
+    {
+        TimeZoneInfo tzi = TZConvert.GetTimeZoneInfo(DateRegion);
+        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(date, tzi);
+        return cstTime.ToString("MM/dd/yyyy hh:mm:ss");
+    }
+    private List<Models.DB.LiveProctorMessage> MessageList = new List<Models.DB.LiveProctorMessage>();
+    [Parameter]
+    public List<Models.DB.PExamStudentProctoringStatus> SearchStudentList { get; set; }
+    [Parameter]
+    public string videoURL { get; set; }
+    private List<Models.DB.LiveProctorMessage> liveMsg = new List<Models.DB.LiveProctorMessage>();
+
+    List<Models.DB.PExamStudentProctoringStatus> videoRunning = new List<Models.DB.PExamStudentProctoringStatus>();
+    //List<string> SessionIds = new List<string>();
+    protected override async Task OnInitializedAsync()
+    {
+        videoURL = Configuration["videoURL"];
+        DateRegion = Configuration["DateRegion"];
+        PageSize = Convert.ToInt32(Configuration["pageSize"]);
+        //liveMsg = await searchStudentService.GetAllMsgDataAsync();
+
+    }
+    public async Task ShowEventsModal(long id, int studentId, int examId, string filter, string sessionId)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("filter", filter);
+        param.Add("sessionId", sessionId);
+        var result = await dialogService.OpenAsync<DialogAllEventsPage>("", param, new DialogOptions() { Width = "600px" });
+    }
+
+    public async Task ShowMessageModal(long id, int studentId, int examId, string filter, string sessionId, string studentName)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("filter", filter);
+        param.Add("sessionId", sessionId);
+        var result = await dialogService.OpenAsync<DialogMessagesPage>(studentName, param, new DialogOptions() { Width = "800px" });
+    }
+
+    public async Task NeedAssitance(bool needAssitance, Models.DB.PExamStudentProctoringStatus model)
+    {
+        spinnerService.Show();
+        await searchStudentService.UpdateNeedAssitanceStatus(needAssitance, model.Id);
+        model.NeedAssistance = needAssitance;
+        toastService.ShowSuccess("Status updated Successfully");
+        spinnerService.Hide();
+    }
+
+
+    public async Task CloseVideomodal(long id, Models.DB.PExamStudentProctoringStatus videoStatus)
+    {
+        await searchStudentService.UpdateVideoStatus(videoStatus.SessionId, false);
+        videoRunning.Remove(videoStatus);
+
+        var updateStatus = SearchStudentList.Where(m => m.SessionId == videoStatus.SessionId).FirstOrDefault();
+        if (updateStatus != null)
+        {
+            updateStatus.LiveVideo = false;
+        }
+        //SessionIds.Remove(sessionId);
+        StateHasChanged();
+    }
+    public async Task Showmodal(long id, int studentId, int examId, string sessionId, string filter)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("sessionId", sessionId);
+        param.Add("filter", filter);
+        var result = await dialogService.OpenAsync<DialogEventPage>("", param, new DialogOptions() { Width = "800px" });
+    }
+
+    public async Task Approve(Models.DB.PExamStudentProctoringStatus model, int status, string statusValue)
+    {
+        spinnerService.Show();
+
+        if(statusValue == "Flag")
+        {
+            await searchStudentService.ApproveAsync(model.Id, model.StudentId, model.ExamId, 4);
+        }
+        else
+        {
+            await searchStudentService.ApproveAsync(model.Id, model.StudentId, model.ExamId, status);
+        }
+
+
+        //if (model.PProctroingEvaluation != null && model.PProctroingEvaluation.Count() > 0)
+        //{
+        //    model.PProctroingEvaluation.FirstOrDefault().ProctoringStatus = status;
+        //}
+
+        //await SaveLog(model.Id, statusValue, false);
+        toastService.ShowSuccess("Status updated Successfully");
+        spinnerService.Hide();
+    }
+
+    public async Task SaveLog(long id, string statusValue, bool showmessage = true)
+    {
+        spinnerService.Show();
+        await searchStudentService.addExamStudentProctoringStatuslog(id, statusValue);
+        if (showmessage)
+        {
+            toastService.ShowSuccess("Status updated Successfully");
+        }
+        spinnerService.Hide();
+    }
+
+    public async Task ShowVideomodal(long id, Models.DB.PExamStudentProctoringStatus videoStatus)
+    {
+        var session = videoRunning.Where(m => m.SessionId == videoStatus.SessionId).FirstOrDefault();
+        if (session == null)
+        {
+            await searchStudentService.UpdateVideoStatus(videoStatus.SessionId, true);
+            videoRunning.Add(videoStatus);
+            videoStatus.LiveVideo = true;
+            StateHasChanged();
+        }
+    }
+
+    public async Task ShowLogsModal(long id)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        var result = await dialogService.OpenAsync<DialogProctoringStatusLogsPage>("Event Status Logs", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+    public async Task ShowImageModal(string imageName)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        var result = await dialogService.OpenAsync<DialogStudentImagePage>("Student Image", param, new DialogOptions() { Width = "600px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+
+    public async Task ShowImpersonationImageModal(long Id)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("id", Id);
+        var result = await dialogService.OpenAsync<DialogStudentImpersonationImage>("Spoof", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+
+
+    public async Task ShowCompareImageModal(string imageName, string refImageName)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        param.Add("refImageName", refImageName);
+        var result = await dialogService.OpenAsync<DialogStudentCompareImagePage>("Student Image", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+    public async Task ShowVideoDialogModal(long id, string sessionId, string fullname, string suId)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("sessionId", sessionId);
+        param.Add("fullname", fullname);
+        param.Add("suId", suId);
+        var result = await dialogService.OpenAsync<DialogVideoPage>("Live", param, new DialogOptions() { Width = "600px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+}
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1040;
+    }
+</style>

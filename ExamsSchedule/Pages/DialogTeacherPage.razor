@@ -1,0 +1,89 @@
+﻿@page "/dialogteacher"
+
+
+<div class="add-user-form">
+    <div class="row">
+        <div class="col-md-12">
+
+            <EditForm Model="@teacherModel" OnValidSubmit="HandleTeacherSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-group">
+                    <label>Email<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@teacherModel.Email" placeholder="Email" disabled="@(teacherModel.Id != null)"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Password<span class="required-sign">*</span></label>
+                    <InputText type="password" class="form-control" @bind-Value="@teacherModel.Password" placeholder="Password"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password<span class="required-sign">*</span></label>
+                    <InputText type="password" class="form-control" @bind-Value="@teacherModel.ConfirmPassword" placeholder="Confirm Password"></InputText>
+                </div>
+                <button type="submit" class="btn btn-secondary">Register</button>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
+@using ExamsSchedule.Areas.Identity.Pages.Account
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using ExamsSchedule.Models
+@inject SpinnerService spinnerService
+@inject ExamService ExamService
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@code {
+    public string ReturnUrl { get; set; }
+    public RegisterViewModel teacherModel = new RegisterViewModel();
+
+    [Parameter]
+    public RegisterViewModel SelectedTeacher { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (SelectedTeacher != null)
+        {
+            teacherModel = SelectedTeacher;
+        }
+    }
+
+
+    public async Task HandleTeacherSubmit()
+    {
+        if (string.IsNullOrEmpty(teacherModel.Id))
+        {
+            spinnerService.Show();
+            var result = await teacherService.AddUserAsync(teacherModel);
+            if(result.Succeeded)
+            {
+                toastService.ShowSuccess("New Record has been added Successfully");
+                spinnerService.Hide();
+                dialogService.Close(true);
+            }
+            else
+            {
+                toastService.ShowError(result.Errors.FirstOrDefault().Description);
+                spinnerService.Hide();
+            }
+        }
+        else
+        {
+            spinnerService.Show();
+            var result = await teacherService.UpdateUser(teacherModel);
+            toastService.ShowSuccess("Record has been updated Successfully");
+            spinnerService.Hide();
+            dialogService.Close(true);
+        }
+    }
+
+}
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1038;
+    }
+</style>

@@ -1,0 +1,125 @@
+﻿@page "/uploads"
+@using ExamsSchedule.Models.DB
+@using Radzen.Blazor
+@using System.Net.Http
+@using System.Net.Http.Json
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Bulk Uploads</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Bulk Uploads</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+
+                <div class="card">
+                    <div class="card-body">
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="" style="text-align: left; margin-bottom: 10px; margin-top: 25px; margin-right: 10px; margin-left: 15px;">
+                                    <div class="row">
+
+                                        <div class="col-3">
+                                            @*<label>Filter By Type </label><br />*@
+                                            <RadzenDropDown AllowClear="true" AllowFiltering="true"
+                                                            @bind-Value=@filterByType Placeholder="Filter" Data="options"
+                                                            Style="width: 100%" />
+                                        </div>
+                                        <p class="col-6">
+                                            <InputFile OnChange="@OnInputFileChange" />
+                                            <input class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button" @onclick="() => uploadData(filterByType)" disabled="@(imageFile == null)" value="Upload Data" />
+
+                                        </p>
+
+                                    </div>
+                                    @if (ExamUploadFile != null && ExamUploadFile.Count() > 0)
+                                    {
+                                        <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                                    AllowSorting="true" Data="@ExamUploadFile" TItem="ExamsSchedule.Models.ExamUploads">
+                                            <Columns>
+                                                <RadzenGridColumn TItem="ExamsSchedule.Models.ExamUploads" Property="FileName" Title="File Name" />
+
+                                                <RadzenGridColumn TItem="ExamsSchedule.Models.ExamUploads" Property="CreatedAt" Title="Created At" />
+
+                                                <RadzenGridColumn TItem="ExamsSchedule.Models.ExamUploads" Property="Type" Title="Type" />
+
+                                                <RadzenGridColumn TItem="ExamsSchedule.Models.ExamUploads" Property="Status" Title="Status" />
+
+                                                <RadzenGridColumn TItem="ExamsSchedule.Models.ExamUploads" Property="" Title="">
+                                                    <Template Context="data">
+                                                        <a class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary btn-sm " href="/download?Filename=@data.FileName" target="_blank" style="border-radius: 8px;">Download</a>
+                                                        @*<RadzenButton  ButtonStyle="ButtonStyle.Secondary" Size="Radzen.ButtonSize.Small" Click="@(args=>DownloadData(data.FileName))" Text="Download" Icon="" ></RadzenButton>*@
+                                                    </Template>
+                                                </RadzenGridColumn>
+                                            </Columns>
+                                        </RadzenGrid>
+                                    }
+                                    <br />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using ExamsSchedule.Services
+@using Blazored.Toast.Services
+@using ExamsSchedule.Models
+@inject ExamService examService
+@inject IToastService toastService
+@inject SearchStudentService searchStudentService
+@inject SpinnerService spinnerService
+@inject HttpClient Http
+@code {
+    private string filterByType;
+    private int ExamId;
+    private int studentId;
+    public string[] options = new string[] { "Faculty", "Exam", "Student" };
+    public List<ExamUploads> ExamUploadFile = new List<ExamUploads>();
+    IList<ExamsSchedule.Models.ExamUploads> List;
+    public List<IBrowserFile> imageFile = new List<IBrowserFile>();
+    protected override async Task OnInitializedAsync()
+    {
+        ExamUploadFile = await searchStudentService.GetExamUploads();
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 3;
+        foreach (var imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            imageFile.Add(imageFile1);
+        }
+    }
+    public async Task uploadData(string filterByType)
+    {
+        if (imageFile != null)
+        {
+            spinnerService.Show();
+            var examUpload = await searchStudentService.ImportData(imageFile, filterByType);
+            if (examUpload != null)
+            {
+                var saveExamUploadFile = await searchStudentService.SaveExamUploadFile(examUpload);
+                ExamUploadFile = await searchStudentService.GetExamUploads();
+            }
+            StateHasChanged();
+            spinnerService.Hide();
+        }
+    }
+}

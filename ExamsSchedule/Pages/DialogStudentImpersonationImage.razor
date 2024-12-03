@@ -1,0 +1,67 @@
+﻿@page  "/dialogStudentImpersonationimage/{Id:long}";
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using ExamsSchedule.Services
+
+<BSCarousel NumberOfItems="@ImpersonationImageList.Count">
+    <BSCarouselIndicators NumberOfItems="@ImpersonationImageList.Count" />
+    <div class="carousel-inner">
+        @for (int i = 0; i < ImpersonationImageList.Count; i++)
+        {
+            string img = blobBaseURL + "/save-image-blob/" + ImpersonationImageList[i].RefImage;
+            string img1 = blobBaseURL + "/save-image-blob/" + ImpersonationImageList[i].CompareImage;
+            <BSCarouselItem>
+                <div class="row">
+                    <div class="col-md-6">
+                        <img src="@img" style="max-width: 350px;">
+                    </div>
+                    <div class="col-md-6">
+                        <img src="@img1" style="max-width: 350px;">
+                    </div>
+                </div>
+            </BSCarouselItem>
+        }
+    </div>
+    <BSCarouselControl CarouselDirection="CarouselDirection.Previous" NumberOfItems="@ImpersonationImageList.Count" />
+    <BSCarouselControl CarouselDirection="CarouselDirection.Next" NumberOfItems="@ImpersonationImageList.Count" />
+</BSCarousel>
+
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject SearchStudentService searchStudentService
+@using Blazored.Toast.Services
+
+@code {
+
+    [Parameter]
+    public long Id { get; set; }
+
+    public string blobBaseURL { get; set; }
+
+    private List<Models.DB.StudentImpersonation> ImpersonationImageList = new List<Models.DB.StudentImpersonation>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            ImpersonationImageList = await searchStudentService.GetImpersonationImages(Id);
+            StateHasChanged();
+        }
+    }
+
+}
+
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1038;
+    }
+</style>

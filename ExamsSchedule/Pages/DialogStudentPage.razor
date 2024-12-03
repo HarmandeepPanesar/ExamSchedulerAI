@@ -1,0 +1,135 @@
+﻿@page "/dialogstudent"
+
+
+<div class="add-user-form">
+    <div class="row">
+        <div class="col-md-12">
+            <EditForm Model="@studentModel" OnValidSubmit="HandleStudentSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-group">
+                    <label>First Name<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@studentModel.FirstName" placeholder="First Name"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Middle Name</label>
+                    <InputText class="form-control" @bind-Value="@studentModel.MiddleName" placeholder="Middle Name"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Last Name<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@studentModel.LastName" placeholder="Last Name"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>DoB<span class="required-sign">*</span></label>
+                    <InputDate class="form-control" @bind-Value="@studentModel.DoB" placeholder="DoB"></InputDate>
+                </div>
+                <div class="form-group">
+                    <label>Email<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@studentModel.Email" placeholder="Email"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Student Identity<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@studentModel.StudentIdentity" placeholder="Student Identity"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Student Unique Id (LMS Link)<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@studentModel.StudentUniqueId" placeholder="Student Unique Id (LMS Link)"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Camera Exception</label>
+                    <InputCheckbox  @bind-Value="@studentModel.AllowNoCamera"></InputCheckbox>
+                </div>
+                <div class="form-group">
+                    <label>Upload Student Image<span class="required-sign">*</span></label>
+                    <InputFile OnChange="@OnInputImageChange" />
+                    @if (SelectedStudent != null && SelectedStudent.ImageName != null)
+                    {
+                        <span><img src="@img" style="width:50px; height:50px;" /></span>
+                    }
+                </div>
+                @*<div class="form-group">
+            <label>Created Date<span class="required-sign">*</span></label>
+            <InputDate class="form-control" @bind-Value="@studentModel.CreatedDate" placeholder="Created Date"></InputDate>
+        </div>*@
+                @*<div class="form-group">
+            <label>Created By<span class="required-sign">*</span></label>
+            <InputText class="form-control" @bind-Value="@studentModel.CreatedBy" placeholder="Created By"></InputText>
+        </div>*@
+                <hr />
+                <div>
+                    <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">Submit</button>
+                    <button @onclick="@((args)=>dialogService.Close(false))" class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject SpinnerService spinnerService
+@inject ExamService ExamService
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject StudentService studentService
+@code
+{
+
+    string img = "";
+    public IList<IBrowserFile> imageFile = new List<IBrowserFile>();
+
+    public ExamsSchedule.Models.DB.PStudent studentModel = new ExamsSchedule.Models.DB.PStudent();
+
+    [Parameter]
+    public ExamsSchedule.Models.DB.PStudent SelectedStudent { get; set; }
+
+    public string blobBaseURL { get; set; }
+
+    private async Task OnInputImageChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 20;
+        foreach (var imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            imageFile.Add(imageFile1);
+        }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+        if (SelectedStudent != null)
+        {
+            img = blobBaseURL + "/studentidentity/" + SelectedStudent.ImageName;
+            studentModel = SelectedStudent;
+        }
+    }
+
+    public async Task HandleStudentSubmit()
+    {
+        if (studentModel.Id == 0 && imageFile != null)
+        {
+            spinnerService.Show();
+            var result = await studentService.AddStudentAsync(studentModel, imageFile);
+            toastService.ShowSuccess("New Record is Added Successfully");
+            spinnerService.Hide();
+        }
+        else
+        {
+            spinnerService.Show();
+            var result = await studentService.UpdateStudentAsync(studentModel, imageFile);
+            toastService.ShowSuccess("Record is Updated Successfully");
+            spinnerService.Hide();
+        }
+        dialogService.Close(true);
+    }
+}
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1038;
+    }
+</style>

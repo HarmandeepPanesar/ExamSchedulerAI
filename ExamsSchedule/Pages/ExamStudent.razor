@@ -1,0 +1,230 @@
+﻿@page "/examstudent"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Exams Student Mapping</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Exams Student Mapping</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div>
+                                <label>Select Student</label><br />
+                                <RadzenAutoComplete Placeholder="Select Student"
+                                                    LoadData="@LoadStudentData"
+                                                    Data=@StudentList
+                                                    TextProperty="FullName"
+                                                    Change="@(args => ChangeStudentOption(args))"
+                                                    Style="width: 100%;" />
+
+                                @*<RadzenDropDown AllowClear="true" @bind-Value=@studentId AllowFiltering="true" TValue="int" Placeholder="Select Student"
+                                    TextProperty="FullName" ValueProperty="Id" Style="width:100%"
+                                    Data="@StudentList" Change="@(args=>ChangeStudentOption(studentId))"></RadzenDropDown>*@
+                                @if (IsSubmitted && StudentList == null)
+                                {
+                    <span class="text-danger">The Student field is required.</span>}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <label>Select Exams</label>
+                                </div>
+                                <div class="col-md-8">
+                                    <RadzenTextBox @bind-Value="txtSearchExam"
+                                                   Placeholder="Search Exam"
+                                                   Style="width: 400px;" @onkeyup="@(e => InputKeyPressed(e))" />
+
+                                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@FilterExams" Size="Radzen.ButtonSize.Medium"
+                                                  Text="Search" Icon="search"></RadzenButton>
+
+                                    @if (txtSearchExam != null)
+                                    {
+                        <span>&nbsp;</span>
+                                        <RadzenButton Click="@ClearFilterExams" Size="Radzen.ButtonSize.Medium"
+                                                      Text="Clear" Icon="clear" ButtonStyle="ButtonStyle.Light"></RadzenButton>}
+                                </div>
+                            </div>
+
+                            @if (ExamList != null)
+                            {
+                <div class="row">
+                    @for (var i = 0; i < ExamList.Count; i++)
+                    {
+                        var item = ExamList[i];
+    <div class="col-md-6">
+        <RadzenCheckBoxList @bind-Value=@values TValue="int" Orientation="Orientation.Vertical" Change=@(args => OnChange(args, "CheckBoxList with Horizotnal orientation"))>
+            <Items>
+                @{  string ExamIdentifier1 = item.ExamIdentifier1;
+                    string ExamIdentifier2 = item.ExamIdentifier2;
+                    string ExamName = ExamIdentifier1 + " & " + ExamIdentifier2 +"-"+ item.ExameName; }
+                <RadzenCheckBoxListItem Text="@ExamName" Value="@item.ExamId" />
+            </Items>
+        </RadzenCheckBoxList>
+    </div>}
+                </div>}
+                            @if (IsSubmitted && (values == null || values.Count() == 0))
+                            {
+                <span class="text-danger">The Exams is required.</span>}
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="row">
+                        <div class="col-12">
+                            <div>
+                                <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button" @onclick="HandleSubmit">Submit</button>
+                                <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject StudentService studentService
+@inject IJSRuntime JsRuntime
+@inject ExamService ExamService
+@inject ExamStudentService ExamStudentService
+@code
+{ int Skip;
+            int Top;
+            public string txtSearchExam { get; set; }
+            private List<Models.DB.PExam> ExamList;
+            private List<Models.DB.PStudent> StudentList;
+
+            public bool IsSubmitted { get; set; }
+
+            private int studentId;
+            IEnumerable<int> values = new int[] { };
+            public string txtSearchStudent { get; set; }
+            public List<string> SelectedValues { get; set; }
+            protected override async Task OnInitializedAsync()
+            {
+                StudentList = await studentService.GetAllDataAsync();
+                ExamList = await ExamService.GetAllDataAsync();
+                ExamList = ExamList.Where(m => m.EndDate >= DateTime.Now).ToList();
+            }
+
+            //public async Task ChangeStudentOption(int studentId)
+            //{
+            //    var data = await ExamStudentService.GetAllDataAsync(studentId);
+            //    if (data != null && data.Count() > 0)
+            //    {
+            //        var examIds = data.Select(m => m.ExamId);
+            //        values = examIds;
+            //    }
+            //    else
+            //    {
+            //        values = new int[] { };
+            //    }
+            //}
+            public async Task FilterExams()
+            {
+                Skip = 0;
+                await GetExamListAsync(txtSearchExam);
+            }
+            async Task LoadStudentData(LoadDataArgs args)
+            {
+                if (!string.IsNullOrEmpty(args.Filter))
+                {
+                    StudentList = await studentService.SearchStudentAsync(args.Filter);
+                    StateHasChanged();
+                }
+            }
+            public async Task GetExamListAsync(string filter = null)
+            {
+                ExamList = await ExamService.GetAllDataAsync(Skip, Top, filter);
+                //Count = (await ExamService.GetAllExamsCount(Skip, Top, filter));
+                StateHasChanged();
+            }
+            protected async Task InputKeyPressed(KeyboardEventArgs args)
+            {
+                if (args.Key == "Enter")
+                {
+                    //call login or what ever you want when user pressed Enter
+                    await FilterExams();
+                }
+            }
+            public async Task ClearFilterExams()
+            {
+                txtSearchExam = null;
+                await GetExamListAsync(txtSearchExam);
+                StateHasChanged();
+            }
+            public async Task ChangeStudentOption(object studentname)
+            {
+                if (studentname != null)
+                {
+                    string strStudent = studentname.ToString();
+                    var selectedStudent = StudentList.Where(m => m.FullName == strStudent).FirstOrDefault();
+
+                    if (selectedStudent != null)
+                    {
+                        studentId = selectedStudent.Id;
+                        var data = await ExamStudentService.GetAllDataAsync(studentId);
+                        if (data != null && data.Count() > 0)
+                        {
+                            var examIds = data.Select(m => m.ExamId);
+                            values = examIds;
+                        }
+                        else
+                        {
+                            values = new int[] { };
+                        }
+
+                    }
+                    StateHasChanged();
+                }
+
+            }
+
+
+            void OnChange(IEnumerable<int> value, string name)
+            {
+                //console.Log($"{name} value changed to {string.Join(", ", value)}");
+            }
+
+            public void ExamTypeChange(object value)
+            {
+
+            }
+
+            public async Task HandleSubmit()
+            {
+                IsSubmitted = true;
+                if (studentId != 0 && values != null)
+                {
+                    spinnerService.Show();
+                    await ExamStudentService.AddExamStudentAsync(studentId, values);
+                    toastService.ShowSuccess("Record is Added Successfully");
+                    spinnerService.Hide();
+                }
+            } }

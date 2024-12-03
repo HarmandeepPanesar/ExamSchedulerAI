@@ -1,0 +1,54 @@
+﻿<!-- minified snippet to load TalkJS without delaying your page -->
+<script>
+    (function(t,a,l,k,j,s){
+    s=a.createElement('script');s.async=1;s.src="https://cdn.talkjs.com/talk.js";a.head.appendChild(s)
+    ;k=t.Promise;t.Talk={v:3,ready:{then:function(f){if(k)return new k(function(r,e){l.push([f,r,e])});l
+    .push([f])},catch:function(){return k&&new k()},c:l}};})(window,document,[]);
+</script>
+
+<script>
+
+        var qs = (function(a) {
+            if (a == "") return {};
+            var b = {};
+            for (var i = 0; i < a.length; ++i)
+            {
+                var p=a[i].split('=', 2);
+                if (p.length == 1)
+                    b[p[0]] = "";
+                else
+                    b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
+            }
+            return b;
+        })(window.location.search.substr(1).split('&'));
+
+        Talk.ready.then(function () {
+        var me = new Talk.User({
+            id: qs["id"],
+            name: qs["name"]
+        });
+        var proctor = new Talk.User({
+            id: 'Proctor',
+            name: 'Proctor',
+            welcomeMessage: 'Need Assistance?',
+        });
+        window.talkSession = new Talk.Session({
+            appId: 'l7EjQDKW',
+            me: me,
+        });
+
+
+        var conversation =  talkSession.getOrCreateConversation(qs["sessionId"]);
+            conversation.setParticipant(me);
+            conversation.setParticipant(proctor);
+
+        var chatbox = window.talkSession.createChatbox(conversation);
+        chatbox.mount(document.getElementById('talkjs-container'));
+
+        });
+</script>
+
+<!-- container element in which TalkJS will display a chat UI -->
+<div id="talkjs-container" style="width: 100%; height: 100%">
+    <i>Loading chat...</i>
+</div>

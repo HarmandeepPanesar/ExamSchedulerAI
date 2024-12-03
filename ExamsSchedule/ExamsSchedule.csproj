@@ -1,0 +1,191 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <UserSecretsId>aspnet-ExamsSchedule-D7B8A9B8-E4EE-4FB6-ADD9-0DB57A86A633</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Models\DB_1\**" />
+    <Compile Remove="Models\DB_backup\**" />
+    <Compile Remove="Models\DB_old\**" />
+    <Content Remove="Models\DB_1\**" />
+    <Content Remove="Models\DB_backup\**" />
+    <Content Remove="Models\DB_old\**" />
+    <EmbeddedResource Remove="Models\DB_1\**" />
+    <EmbeddedResource Remove="Models\DB_backup\**" />
+    <EmbeddedResource Remove="Models\DB_old\**" />
+    <None Remove="Models\DB_1\**" />
+    <None Remove="Models\DB_backup\**" />
+    <None Remove="Models\DB_old\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="Areas\Identity\Pages\Account\ExportFile.cshtml" />
+  </ItemGroup>
+
+
+ 
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="Areas\Identity\Pages\Account\ConfirmEmailChange.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\ForgotPassword.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\ForgotPasswordConfirmation.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Login.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\LogOut.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\ChangePassword.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\Email.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\Index.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\PersonalData.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\SetPassword.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\_ManageNav.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\_StatusMessage.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Manage\_ViewImports.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\NeedAssistance.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\PlayVideo.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\Register.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\ResetPassword.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\ResetPasswordConfirmation.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\SecureChat.cshtml" />
+    <None Include="Areas\Identity\Pages\Account\_ViewImports.cshtml" />
+    <None Include="Areas\Identity\Pages\Shared\_LoginPartial.cshtml" />
+    <None Include="Areas\Identity\Pages\_ViewImports.cshtml" />
+    <None Include="Areas\Identity\Pages\_ViewStart.cshtml" />
+    <None Include="ExamsSchedule - Backup.csproj" />
+    <None Include="ExamsSchedule.csproj" />
+    <None Include="ExamsSchedule.csproj.user" />
+    <None Include="Pages\ChangePassword.razor" />
+    <None Include="Pages\Counter.razor" />
+    <None Include="Pages\DialogAllEventsPage.razor" />
+    <None Include="Pages\DialogEventPage.razor" />
+    <None Include="Pages\DialogExampage.razor" />
+    <None Include="Pages\DialogMessagesPage.razor" />
+    <None Include="Pages\DialogProctoringStatusLogsPage.razor" />
+    <None Include="Pages\DialogStudentCompareImagePage.razor" />
+    <None Include="Pages\DialogStudentImagePage.razor" />
+    <None Include="Pages\DialogStudentImpersonationImage.razor" />
+    <None Include="Pages\DialogStudentPage.razor" />
+    <None Include="Pages\DialogTeacherPage.razor" />
+    <None Include="Pages\DialogVideoPage.razor" />
+    <None Include="Pages\Error.cshtml" />
+    <None Include="Pages\Exams.razor" />
+    <None Include="Pages\ExamStudent.razor" />
+    <None Include="Pages\ExamUpload.razor" />
+    <None Include="Pages\FacultyUpload.razor" />
+    <None Include="Pages\FetchData.razor" />
+    <None Include="Pages\Index.razor" />
+    <None Include="Pages\LiveProctor.razor" />
+    <None Include="Pages\LmsIntegration.razor" />
+    <None Include="Pages\SearchStudent.razor" />
+    <None Include="Pages\SearchStudents.razor" />
+    <None Include="Pages\Shared\VerifyExam.razor" />
+    <None Include="Pages\Shared\_Layout.cshtml" />
+    <None Include="Pages\Shared\_LoginPartial.cshtml" />
+    <None Include="Pages\Shared\_ValidationScriptsPartial.cshtml" />
+    <None Include="Pages\StudentExamProctorComponent.razor" />
+    <None Include="Pages\StudentFaculty.razor" />
+    <None Include="Pages\StudentImages.razor" />
+    <None Include="Pages\Students.razor" />
+    <None Include="Pages\StudentUpload.razor" />
+    <None Include="Pages\Systemsetup.razor" />
+    <None Include="Pages\Teachers.razor" />
+    <None Include="Pages\UploadStudentExamFacultyFiles.razor" />
+    <None Include="Pages\UploadStudentExamFiles.razor" />
+    <None Include="Pages\VerifyStudentExam.razor" />
+    <None Include="Pages\_Host.cshtml" />
+    <None Include="Pages\_ViewImports.cshtml" />
+    <None Include="Pages\_ViewStart.cshtml" />
+    <None Include="Properties\PublishProfiles\FolderProfile.pubxml.user" />
+    <None Include="Properties\PublishProfiles\icfaiDev - Web Deploy.pubxml.user" />
+    <None Include="Properties\serviceDependencies.icfaiDev - Web Deploy.json.user" />
+    <None Include="Properties\serviceDependencies.local.json.user" />
+    <None Include="Shared\LoadingSpinner.razor" />
+    <None Include="Shared\LoginDisplay.razor" />
+    <None Include="Shared\MainLayout.razor" />
+    <None Include="Shared\NavMenu.razor" />
+    <None Include="Shared\SurveyPrompt.razor" />
+    <None Include="wwwroot\css\bootstrap\bootstrap.min.css.map" />
+    <None Include="wwwroot\css\open-iconic\FONT-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\font\fonts\open-iconic.svg" />
+    <None Include="wwwroot\css\open-iconic\ICON-LICENSE" />
+    <None Include="wwwroot\css\open-iconic\README.md" />
+    <None Include="wwwroot\dist\css\adminlte.css.map" />
+    <None Include="wwwroot\dist\css\adminlte.min.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.components.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.components.min.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.core.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.core.min.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.extra-components.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.extra-components.min.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.pages.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.pages.min.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.plugins.css.map" />
+    <None Include="wwwroot\dist\css\alt\adminlte.plugins.min.css.map" />
+    <None Include="wwwroot\dist\js\adminlte.js" />
+    <None Include="wwwroot\dist\js\adminlte.js.map" />
+    <None Include="wwwroot\dist\js\adminlte.min.js" />
+    <None Include="wwwroot\dist\js\adminlte.min.js.map" />
+    <None Include="wwwroot\dist\js\demo.js" />
+    <None Include="wwwroot\dist\js\pages\dashboard.js" />
+    <None Include="wwwroot\dist\js\pages\dashboard2.js" />
+    <None Include="wwwroot\dist\js\pages\dashboard3.js" />
+    <None Include="wwwroot\ImportDataFiles\StudentExamFaculyMappingCSV.csv" />
+    <None Include="wwwroot\ImportDataFiles\StudentExamMappingCSV.csv" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.bundle.js" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.bundle.js.map" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.bundle.min.js" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.bundle.min.js.map" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.js" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.js.map" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.min.js" />
+    <None Include="wwwroot\plugins\bootstrap\js\bootstrap.min.js.map" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-brands-400.svg" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-brands-400.woff2" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-regular-400.svg" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-regular-400.woff2" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-solid-900.svg" />
+    <None Include="wwwroot\plugins\fontawesome-free\webfonts\fa-solid-900.woff2" />
+    <None Include="wwwroot\plugins\icheck-bootstrap\LICENSE" />
+    <None Include="wwwroot\plugins\jquery-ui\external\jquery\jquery.js" />
+    <None Include="wwwroot\plugins\jquery-ui\jquery-ui.js" />
+    <None Include="wwwroot\plugins\jquery-ui\jquery-ui.min.js" />
+    <None Include="wwwroot\plugins\jquery\core.js" />
+    <None Include="wwwroot\plugins\jquery\jquery.js" />
+    <None Include="wwwroot\plugins\jquery\jquery.min.js" />
+    <None Include="wwwroot\plugins\jquery\jquery.min.map" />
+    <None Include="wwwroot\plugins\jquery\jquery.slim.js" />
+    <None Include="wwwroot\plugins\jquery\jquery.slim.min.js" />
+    <None Include="wwwroot\plugins\jquery\jquery.slim.min.map" />
+    <None Include="wwwroot\plugins\tempusdominus-bootstrap-4\js\tempusdominus-bootstrap-4.js" />
+    <None Include="wwwroot\plugins\tempusdominus-bootstrap-4\js\tempusdominus-bootstrap-4.min.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.18.0" />
+    <PackageReference Include="BlazorDateRangePicker" Version="4.2.0" />
+    <PackageReference Include="Blazored.Toast" Version="3.1.2" />
+    <PackageReference Include="BlazorStrap" Version="5.2.103" />
+    <PackageReference Include="DocumentFormat.OpenXml" Version="2.15.0" />
+    <PackageReference Include="EntityFramework" Version="6.5.1" />
+    <PackageReference Include="EPPlus" Version="5.5.5" />
+    <PackageReference Include="Faso.Blazor.SpinKit" Version="1.0.1" />
+    <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.ProtectedBrowserStorage" Version="0.1.0-alpha.19521.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.Design" Version="1.1.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="3.1.4" />
+    <PackageReference Include="Radzen.Blazor" Version="2.18.8" />
+    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+    <PackageReference Include="TimeZoneConverter" Version="3.4.0" />
+    <PackageReference Include="WindowsAzure.Storage" Version="9.3.3" />
+  </ItemGroup>
+
+</Project>

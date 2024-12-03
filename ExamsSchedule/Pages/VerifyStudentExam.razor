@@ -1,0 +1,137 @@
+﻿@page "/verifystudentexam/{Id:int}"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>
+                    Review Student Exam Proctoring
+                </h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">
+                        Review Student Exam Proctoring
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            @if (data != null)
+                            {
+                                if (data.Student != null)
+                                {
+                                    <p>Student Name:&nbsp;&nbsp;<span>@data.Student.FirstName @data.Student.LastName</span></p>
+                                }
+
+                                <p>Exam Code:&nbsp;&nbsp;<span>@data.Uniqueidentifier</span></p>
+                                if (data.Student != null)
+                                {
+                                    <p>Exam Description:&nbsp;&nbsp;<span>@data.Exam.ExamDescription</span></p>
+                                }
+                            }
+                        </div>
+                        <div class="col-6">
+                            <p>Status:<span></span></p>
+                            <RadzenTextArea></RadzenTextArea>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                        AllowSorting="true" Data="eventList" TItem="EventViewMOdel">
+                                <Columns>
+                                    <RadzenGridColumn TItem="EventViewMOdel" Property="EventName" Title="Events"></RadzenGridColumn>
+                                    <RadzenGridColumn TItem="EventViewMOdel" Property="FileName" Title="Video Links">
+                                        <Template Context="data">
+                                            @foreach (var item in data.Events)
+                                            {
+                                                <a href="@item.FileName">
+                                                    @item.FileName
+                                                </a>
+                                                <br />
+                                            }
+                                        </Template>
+                                    </RadzenGridColumn>
+                                </Columns>
+
+                            </RadzenGrid>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using ExamsSchedule.Models.DB
+@inject StudentService studentService
+@inject ExamService examService
+@inject VerifyExamService VerifyExamService
+
+@inject ExamsSchedule.Models.DB.DeepsensorClientContext _dbContext
+@code
+{
+    public class EventViewMOdel
+    {
+        public string EventName { get; set; }
+
+        public List<PEvents> Events { get; set; }
+    }
+
+    [Parameter]
+    public int Id { get; set; }
+    public List<EventViewMOdel> eventList { get; set; }
+
+    public PExamStudentProctoringStatus data { get; set; } = new PExamStudentProctoringStatus();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        //data = _dbContext.PExamStudentProctoringStatus.FirstOrDefault(m => m.Id == Id);
+        data = await VerifyExamService.GetStudentProctoring(Id);
+
+        if (data.Student != null && data.Student.Id != 0 && data.Exam != null && data.Exam.ExamIdentifier1 != null)
+        {
+            var event_List = await VerifyExamService.GetEvents(data.Student.Id, data.Exam.ExamIdentifier1);
+
+            eventList = (from p in event_List
+                         group p by p.Event into g
+                         select new EventViewMOdel { EventName = g.Key, Events = g.ToList() }).ToList();
+            //StateHasChanged();
+        }
+    }
+
+    //protected override void OnInitialized()
+    //{
+    //    data = _dbContext.PExamStudentProctoringStatus.FirstOrDefault(m => m.Id == Id);
+
+    //    if(data.Student.Id != 0 && data.Exam.ExamIdentifier1 != null)
+    //    {
+    //        var event_List = VerifyExamService.GetEvents(data.Student.Id, data.Exam.ExamIdentifier1);
+    //        eventList = (from p in event_List
+    //                     group p by p.Event into g
+    //                     select new EventViewMOdel { EventName = g.Key, Events = g.ToList() }).ToList();
+    //        StateHasChanged();
+    //    }
+
+    //}
+
+
+}

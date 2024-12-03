@@ -1,0 +1,140 @@
+﻿@page "/dialogallevents/{studentId:int}/{ExamId:int}"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using TimeZoneConverter
+
+<RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive"
+            FilterMode="Radzen.FilterMode.Advanced"
+            AllowPaging="true" PageSize="10" Data="@list"
+            AllowSorting="false" TItem="EventListViewModel">
+    <Columns>
+        <RadzenGridColumn TItem="EventListViewModel" Property="Name" Title="Event Name">
+            <Template Context="data">
+                @data.Name
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="EventListViewModel" Property="Name" Title="Time" Width="310px">
+            <Template Context="data">
+                @TimeDiff(data.Dates)
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="EventListViewModel" Property="TimeDiffInMinutes" Title="Minutes">
+            <Template Context="data">
+                @data.TimeDiffInMinutes
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@using ExamsSchedule.Services
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject SearchStudentService searchStudentService
+@using Blazored.Toast.Services
+@using Radzen
+@using Microsoft.AspNetCore.Identity
+@code {
+    [Parameter]
+    public long id { get; set; }
+
+    [Parameter]
+    public int examId { get; set; }
+
+    [Parameter]
+    public string filter { get; set; }
+
+    [Parameter]
+    public int studentId { get; set; }
+
+    [Parameter]
+    public string sessionId { get; set; }
+
+    public string DateRegion { get; set; }
+
+    private List<Models.DB.PEvents> EventList = new List<Models.DB.PEvents>();
+
+    private List<EventListViewModel> list = new List<EventListViewModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        DateRegion = Configuration["DateRegion"];
+        EventList = await searchStudentService.GetEventbyFiltersAsync(studentId, examId, sessionId, filter);
+        //var list = new List<EventListViewModel>();
+
+        for (int i = 0; i < EventList.Count(); i++)
+        {
+            var item = EventList[i];
+            if (item.CreatedDate.HasValue)
+            {
+                if (i == 0)
+                {
+                    list.Add(new EventListViewModel
+                    {
+                        Name = item.Event,
+                        Dates = new List<DateTime>
+    {
+                            item.CreatedDate.Value
+                        }
+                    });
+                }
+                else
+                {
+                    //check previous item
+                    var previousItem = EventList[i - 1];
+                    if (item.Event == previousItem.Event)
+                    {
+                        var l = list.LastOrDefault();
+                        l.Dates.Add(item.CreatedDate.Value);
+                    }
+                    else
+                    {
+                        list.Add(new EventListViewModel
+                        {
+                            Name = item.Event,
+                            Dates = new List<DateTime>
+        {
+                                item.CreatedDate.Value
+                            }
+                        });
+                    }
+                }
+            }
+        }
+        StateHasChanged();
+    }
+
+    public string TimeDiff(List<DateTime> Dates)
+    {
+        //(Dates != null && Dates.Count() > 0) ?
+        //   (TimeZoneInfo.ConvertTimeFromUtc(Dates.FirstOrDefault(),
+        //   TimeZoneInfo.FindSystemTimeZoneById(DateRegion))) + " - " + TimeZoneInfo.ConvertTimeFromUtc(Dates.LastOrDefault(),
+        //   TimeZoneInfo.FindSystemTimeZoneById(DateRegion)) : "";
+
+        TimeZoneInfo tzi = TZConvert.GetTimeZoneInfo(DateRegion);
+
+
+      return  (Dates != null && Dates.Count() > 0) ?
+           (TimeZoneInfo.ConvertTimeFromUtc(Dates.FirstOrDefault(),
+          tzi)) + " - " + TimeZoneInfo.ConvertTimeFromUtc(Dates.LastOrDefault(),
+          tzi) : "";
+
+    }
+
+    public class EventListViewModel
+    {
+        public string Name { get; set; }
+
+        public List<DateTime> Dates { get; set; }
+
+        public string TimeDiffInMinutes => (Dates != null && Dates.Count() > 0) ? ((Dates.LastOrDefault() - Dates.FirstOrDefault()).Minutes + " minutes") : "";
+    }
+
+}
+
+<style>
+    .ui-dialog-wrapper .ui-dialog {
+        width: 800px !important;
+    }
+</style>

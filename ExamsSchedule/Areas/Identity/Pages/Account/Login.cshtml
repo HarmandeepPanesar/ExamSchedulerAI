@@ -1,0 +1,104 @@
+﻿@page
+@using System.Reflection
+@model LoginModel
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Log in";
+
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AI Exams Scheduler | Log in</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/dist/css/adminlte.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+
+    <style>
+        .validation-summary-errors {
+            color: #fff;
+            background: #dc3545;
+            border-color: #d32535;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+        }
+
+            .validation-summary-errors ul {
+                padding: 0;
+                margin: 0;
+            }
+    </style>
+</head>
+<body class="hold-transition login-page">
+    <div class="login-box">
+
+        <div class="card">
+            <div class="card-body login-card-body">
+                <div class="login-logo">
+                    <h2><span style="color:darkgrey">AI</span><span style="color:Highlight">Exam</span><span style="color:darkgrey">Scheduler</span></h2>
+                    
+                </div>
+
+                <p class="login-box-msg">Sign in to start your session</p>
+
+                <form id="account" method="post">
+
+                    <div asp-validation-summary="All"></div>
+
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input asp-for="Input.Email" class="form-control" placeholder="User ID" />
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-envelope"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <input asp-for="Input.Password" class="form-control" placeholder="Password" />
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-lock"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label asp-for="Input.RememberMe">
+                                <input asp-for="Input.RememberMe" />
+                                &nbsp;&nbsp; @Html.DisplayNameFor(m => m.Input.RememberMe)
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-secondary btn-block">Log in</button>
+               
+                    </div>
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="../../plugins/jquery/jquery.min.js"></script>
+<partial name="_ValidationScriptsPartial" />

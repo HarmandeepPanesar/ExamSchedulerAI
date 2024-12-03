@@ -1,0 +1,106 @@
+﻿@page "/studentupload"
+@using ExamsSchedule.Models.DB
+@using Radzen.Blazor
+@using System.Net.Http
+@using System.Net.Http.Json;
+
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Bulk Upload Students</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Student bulk load</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-12">
+                            <EditForm Model="@data" OnValidSubmit="Save">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+                                <div style="text-align:left; margin-bottom:10px; margin-top:10px; margin-right:5px; margin-left:10px;">
+                                    <h6 class="mt-2">Bulk upload students</h6>
+                                    <textarea rows="10"
+                                              @bind-value="@data.email"
+                                              @bind-value:event="oninput" Style="width:700px;" />
+
+                                    @*<InputText class="form-control" @bind-Value="data.email" Style="width:700px;"></InputText>*@
+                                    @*<RadzenTextBox Change=@(args => OnChange(args, "TextBox")) Style="width:700px;height:400px;" />*@
+                                    <h6 style="margin-top: 2rem; margin-left:5px;">List email ids from your LMS. Make sure they are comma seperated. Ex: mike@ExamsScheduler.AI, jennifer@ExamsScheduler.AI</h6>
+                                    <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">
+                                        <i class="fas fa-save"></i>&nbsp;Upload
+                                    </button>
+                                    @*<RadzenButton Size="Radzen.ButtonSize.Medium" Text="Upload" Icon="save"></RadzenButton>*@
+                                </div>
+
+                            </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using ExamsSchedule.Services
+@using Blazored.Toast.Services
+@inject StudentService studentService
+@inject SearchStudentService searchStudentService
+@inject IToastService toastService
+@inject HttpClient Http
+@inject SpinnerService spinnerService
+
+
+@code {
+    public StudentJson data = new StudentJson();
+    //
+
+    private StudentJson[] jsonStudent;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    public async Task Save()
+    {
+        if (data != null && !string.IsNullOrEmpty(data.email))
+        {
+            var dataList = data.email.Split(",");
+
+            spinnerService.Show();
+            var record = await searchStudentService.GetlmsDataAsync();
+            foreach (string d in dataList)
+            {
+                jsonStudent = await Http.GetFromJsonAsync<StudentJson[]>($"{record.WebServiceLink}?wstoken={record.SecurityToken}&wsfunction=core_user_get_users_by_field&moodlewsrestformat=json&field=email&values[0]=" + d);
+
+                if (jsonStudent != null)
+                {
+                    await studentService.BulkUploads(jsonStudent);
+                }
+            }
+
+            data.email = string.Empty;
+
+            toastService.ShowSuccess("Added Successfully");
+            spinnerService.Hide();
+        }
+    }
+
+    //string value;
+    //void OnChange(string value, string name)
+    //{
+
+    //}
+}

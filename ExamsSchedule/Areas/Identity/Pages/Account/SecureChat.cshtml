@@ -1,0 +1,65 @@
+﻿@page
+@model SecureChatModel
+
+@{ Layout = null;
+                ViewData["Title"] = "Video"; }
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>AI Exams Scheduler | Secure Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="~/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <link rel="stylesheet" href="~/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/dist/css/adminlte.min.css">
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <script>
+        window.addEventListener('beforeunload', function (e) {
+            alert("Closing")
+            Submit();
+            e.preventDefault();
+            e.returnValue = '';
+        });
+
+        function Submit() {
+            fetch("./SecureChat?vurl=@Model.ReturnUrl&pclosing=true")
+                .then(function (response) {
+
+                })
+            document.chatForm.submit();
+        }
+    </script>
+    @*<style>
+            .validation-summary-errors {
+                color: #fff;
+                background: #dc3545;
+                border-color: #d32535;
+                padding: 10px;
+                border-radius: 4px;
+                margin-bottom: 14px;
+            }
+
+                .validation-summary-errors ul {
+                    padding: 0;
+                    margin: 0;
+                }
+        </style>*@
+</head>
+<body class="hold-transition login-page">
+    <form method="post" name="chatForm">
+        <input asp-for="@Model.SessionId" style="width:1px;height:1px" />
+    </form>
+    <iframe src="https://tokbox.com/embed/embed/ot-embed.js?embedId=23445b99-57f2-4342-80b9-8bb153d3d800&room=@Model.ReturnUrl&iframe=true"
+            width=300
+            height=300
+            scrolling="auto"
+            allow="microphone; camera"></iframe>
+
+    @*<iframe src="https://tokbox.com/embed/embed/ot-embed.js?embedId=23445b99-57f2-4342-80b9-8bb153d3d800&room=@Model.ReturnUrl&iframe=true" width="400px" height="350px" scrolling="auto" allow="camera">
+        </iframe>*@
+</body>
+</html>

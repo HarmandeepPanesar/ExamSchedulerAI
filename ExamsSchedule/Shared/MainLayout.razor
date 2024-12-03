@@ -1,0 +1,123 @@
+﻿@inherits LayoutComponentBase
+
+@using Microsoft.AspNetCore.ProtectedBrowserStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+
+@inject NavigationManager Navigation
+@code{
+
+    [CascadingParameter] protected Task<AuthenticationState> AuthStat { get; set; }
+
+    public bool hasPageAccess { get; set; } = true;
+    public string routeName { get; set; }
+    public List<string> permissionList { get; set; }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    //    if (firstRender)
+    //    //    {
+    //    var user = (await AuthStat).User;
+    //    user.Identity.
+    //}
+
+    //        if (user.IsInRole("User"))
+    //        {
+    //            var routeName = Navigation.ToBaseRelativePath(Navigation.Uri);
+    //            routeName = string.IsNullOrEmpty(routeName) ? "/" : routeName;
+
+    //            //if(sessionUser != null && sessionUser != user.Identity.Name)
+    //            //{
+    //            //    var per = await permissionService.CheckPagePermission(routeName);
+    //            //    await ProtectedSessionStore.SetAsync("permissions", per);
+    //            //    await ProtectedSessionStore.SetAsync("sessionUser", user.Identity.Name);
+    //            //}
+
+    //            var sessionUser = await ProtectedSessionStore.GetAsync<string>("sessionUser");
+    //            var sessionPermissions = await ProtectedSessionStore.GetAsync<List<string>>("permissions");
+    //            if (sessionUser == null || sessionUser != user.Identity.Name || sessionPermissions == null || sessionPermissions.Count() == 0)
+    //            {
+    //                var per = await permissionService.CheckPagePermission(routeName);
+    //                await ProtectedSessionStore.SetAsync("permissions", per);
+    //                await ProtectedSessionStore.SetAsync("sessionUser", user.Identity.Name);
+    //                if (!per.Contains(routeName) && routeName != "noAccess")
+    //                {
+    //                    Navigation.NavigateTo("noAccess", true);
+    //                }
+    //                else
+    //                {
+    //                    hasPageAccess = true;
+    //                    await Task.Delay(100);
+    //                    StateHasChanged();
+    //                }
+    //            }
+    //            else
+    //            {
+    //                if (!sessionPermissions.Contains(routeName) && routeName != "noAccess")
+    //                {
+    //                    Navigation.NavigateTo("noAccess", true);
+    //                }
+    //                else
+    //                {
+    //                    hasPageAccess = true;
+    //                    await Task.Delay(100);
+    //                    StateHasChanged();
+    //                }
+    //            }
+    //        }
+    //        else
+    //        {
+    //            hasPageAccess = true;
+    //            await Task.Delay(100);
+    //            StateHasChanged();
+    //        }
+    //    }
+    //}
+
+    protected async override Task OnInitializedAsync()
+    {
+        base.OnInitialized();
+        var user = (await AuthStat).User;
+        if (!user.Identity.IsAuthenticated)
+        {
+            Navigation.NavigateTo("Identity/Account/Login", true);
+        }
+    }
+}
+
+<Blazored.Toast.BlazoredToasts />
+<LoadingSpinner></LoadingSpinner>
+
+<AuthorizeView>
+    <Authorized>
+        <NavMenu />
+        <div class="content-wrapper">
+            @routeName
+            @if (hasPageAccess)
+            {
+                @Body
+            }
+            else
+            {
+                <section class="content page-no-access">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="offset-2 col-md-8">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-12 text-center">
+                                                LOADING..
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            }
+        </div>
+    </Authorized>
+</AuthorizeView>
+<Radzen.Blazor.RadzenDialog />
+

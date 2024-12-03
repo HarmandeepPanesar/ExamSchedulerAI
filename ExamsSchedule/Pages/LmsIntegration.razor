@@ -1,0 +1,53 @@
+﻿@*@page "/lmsintegration"
+
+
+<div class="add-user-form">
+    <div class="row">
+        <div class="col-md-12">
+            <EditForm Model="@examModel" OnValidSubmit="HandleExamSubmit">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="form-group">
+                    <label>Exam Name<span class="required-sign">*</span></label>
+                    <InputText class="form-control" @bind-Value="@examModel.SecurityToken" placeholder="Exam Name"></InputText>
+                </div>
+                <div class="form-group">
+                    <label>Exam Desciption</label>
+                    <InputText class="form-control" @bind-Value="@examModel.WebServiceLink" placeholder="Exam Desciption"></InputText>
+                </div>
+                <div>
+                    <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">Submit</button>
+                    <button @onclick="@((args)=>dialogService.Close(false))" class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button">Cancel</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject SearchStudentService searchStudentService
+@inject SpinnerService spinnerService
+@inject ExamService ExamService
+@inject DialogService dialogService
+@inject IToastService toastService
+@code
+
+{
+    public ExamsSchedule.Models.DB.Lmsintegration examModel = new ExamsSchedule.Models.DB.Lmsintegration();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var record = await searchStudentService.GetlmsDataAsync();
+        if (record != null)
+            examModel = record;
+    }
+
+    public async Task HandleExamSubmit()
+    {
+
+    }
+
+}*@

@@ -1,0 +1,504 @@
+﻿@page "/liveproctor"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using TimeZoneConverter;
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Live Proctor</h1>
+            </div>
+            <div class="col-sm-6">
+                @*<ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="#">Home</a></li>
+                        <li class="breadcrumb-item">Live Proctor</li>
+                    </ol>*@
+                @*<RadzenButton class="btn-toggler ml-2" Text="Show Video" Style="float:right;"></RadzenButton>*@
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="col-12">
+                            <RadzenButton ButtonStyle="ButtonStyle.Secondary" id="BtnFullScreen" class="btn-fullScreen" Click="@(()=> Show())" Size="Radzen.ButtonSize.Small" Text="" Icon="FullScreen" Style="display:block; margin-bottom:0px;float:right"><i class="fa fa-arrows-alt" data-toggle="tooltip" title="Full Screen"></i></RadzenButton>
+                        </div>
+                        @*<RadzenButton id="BtnRefresh" class="btn-refresh" Click="@(()=> RefreshGrid(false))" Size="Radzen.ButtonSize.Medium" Text="Refresh" Icon="refresh" Style="display:none; margin-bottom:20px;"></RadzenButton>
+                            <RadzenButton id="BtnRefreshLiveView" class="btn-refreshLiveView" Click="@(()=> RefreshLiveView(false))" Size="Radzen.ButtonSize.Medium" Text="RefreshLiveView" Icon="refresh" Style="display:none; margin-bottom:20px;"></RadzenButton>*@
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" id="BtnRefresh" class="btn-refresh" Click="@(()=> RefreshGrid(false))" Size="Radzen.ButtonSize.Medium" Text="Refresh" Icon="refresh" Style="display:none; margin-bottom:20px;"></RadzenButton>
+                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" id="BtnRefreshLiveView" class="btn-refreshLiveView" Click="@(()=> RefreshLiveView(false))" Size="Radzen.ButtonSize.Medium" Text="RefreshLiveView" Icon="refresh" Style="display:none; margin-bottom:20px;"></RadzenButton>
+                        <div>
+                            <ul class="nav nav-tabs" id="myTab" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#LiveProctor" type="button" role="tab" aria-controls="LiveProctor" aria-selected="true">Live Proctor</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">Live View</button>
+                                </li>
+                            </ul>
+                            <div class="tab-content" id="myTabContent">
+                                <div class="tab-pane fade show active" id="LiveProctor" role="tabpanel" aria-labelledby="LiveProctor-tab">
+                                    <div class="row">
+                                        <div class="col-12" style="margin-top:10px">
+                                            <StudentExamProctorComponent SearchStudentList="SearchStudentList" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                    <h4 style="margin-top:10px;">Total Live Students : @LiveViewList.Count.ToString()</h4>
+                                    <div class="row" style="margin-top:5px;">
+
+                                        @foreach (var data in LiveViewList)
+                                        {
+                                            <div class="col-md-3">
+                                                <div class="card">
+
+                                                    <div class="card-header">
+                                                        <div class="row align-items-start">
+
+                                                            <div class="col-12 text-center">
+
+                                                                <div class="row">
+                                                                    <div class="col-12">
+                                                                        @if (data.MessageStatus.HasValue && data.MessageStatus.Value != 3)
+                                                                        {
+                                                                            <a @onclick="@(args=>ShowImageModal(data.Student.ImageName))" style="cursor: pointer;font-size: 12px; background-color:orange; border:1px black solid">@data.Student.FullName <i class="fas fa-image"></i></a>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <a @onclick="@(args=>ShowImageModal(data.Student.ImageName))" style="cursor: pointer;font-size: 14px;">@data.Student.FullName <i class="fas fa-portrait"></i></a>
+                                                                        }
+
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="row">
+                                                                    <div class="col-12" style="font-size: 14px; color:cornflowerblue">
+
+                                                                        @data.Exam?.ExameName
+
+                                                                    </div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-12" style="font-size: 9px;">
+
+                                                                        @if (data.InitialFaceVerificationPassed.HasValue && data.InitialFaceVerificationPassed.Value)
+                                                                        {
+                                                                            <a @onclick="@(args => ShowCompareImageModal(data.Student.ImageName, data.ReferenceImage))" style="cursor: pointer;font-size: 12px;color:green" title="Student Verification Passed"><i class="fas fa-user-check"></i>&nbsp; </a>
+                                                                        }
+                                                                        @if (data.InitialFaceVerificationPassed.HasValue && !data.InitialFaceVerificationPassed.Value)
+                                                                        {
+                                                                            <a @onclick="@(args => ShowCompareImageModal(data.Student.ImageName, data.ReferenceImage))" style="cursor: pointer;font-size: 12px;color:red" title="Student Verification Failed"><i class="fas fa-user-slash"></i>&nbsp; </a>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+                                                                        @if (data.ImpersonationCheckPassed.HasValue && data.ImpersonationCheckPassed.Value)
+                                                                        {
+                                                                            <a @onclick="@(args=>ShowImpersonationImageModal(data.Id))" style="cursor: pointer;font-size: 12px; color:green" title="Spoof Detection Level- Low"><i class="fas fa-thumbs-up"></i></a>
+                                                                        }
+                                                                        @if (data.ImpersonationCheckPassed.HasValue && !data.ImpersonationCheckPassed.Value)
+                                                                        {
+                                                                            <a @onclick="@(args=>ShowImpersonationImageModal(data.Id))" style="cursor: pointer;font-size: 12px;color:red" title="Spoof Detection Level - High"><i class="fas fa-thumbs-down"></i></a>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+                                                                        @if (data.PhoneDetected.HasValue == true)
+                                                                        {
+                                                                            <i class="fa fa-mobile pl-2 abberant" data-toggle="tooltip" title="Object detected near examinee" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId, "Mobile_Phone_detected"))" style="cursor: pointer;font-size: 12px;color:red"></i>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+
+                                                                        @if (data.NoPersonDetected.HasValue == true)
+                                                                        {
+                                                                            <i class="fa fa-user-times pl-2 abberant" data-toggle="tooltip" title="Examinee missing in action" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId ,"No_Person_detected"))" style="cursor: pointer;font-size: 12px;color:red"></i>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+
+                                                                        @if (data.MultiPersonDetected.HasValue == true)
+                                                                        {
+                                                                            <i class="fa fa-users pl-2 abberant" data-toggle="tooltip" title="Multiple people detected" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId,"More_than_one_person_detected"))" style="cursor: pointer;font-size: 12px;color:red"></i>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+                                                                        @if (data.EyeGazeDetected.HasValue == true)
+                                                                        {
+                                                                            <i class="fa fa-low-vision pl-2 abberant" data-toggle="tooltip" title="Examinee seems to be looking away" @onclick="@(args=>Showmodal(data.Id, data.StudentId,data.ExamId,data.SessionId,"looking_away"))" style="cursor: pointer;font-size: 12px;color:red"></i>
+                                                                            <span>&nbsp;</span>
+                                                                        }
+                                                                        @if (data.Eventcount.HasValue)
+                                                                        {
+                                                                            if (data.Eventcount.Value == 0)
+                                                                            {
+                                                                                <a class="badge badge-success" data-toggle="tooltip" title="Low Abberant Detection">Low</a>
+                                                                            }
+                                                                            else if ((data.PhoneDetected.HasValue && data.EyeGazeDetected.HasValue) || data.MultiPersonDetected.HasValue || data.NoPersonDetected.HasValue)
+                                                                            {
+                                                                                <a class="badge badge-danger" data-toggle="tooltip" title="High Abberant Behavior Detected">High</a>
+                                                                            }
+                                                                            else if ((data.PhoneDetected.HasValue && data.Eventcount.Value >= 30))
+                                                                            {
+                                                                                <a class="badge badge-danger" data-toggle="tooltip" title="High Abberant Behavior Detected">High</a>
+                                                                            }
+                                                                            else if (data.Eventcount.Value <= 30 && data.PhoneDetected.HasValue)
+                                                                            {
+                                                                                <a class="badge badge-warning" data-toggle="tooltip" title="Some Abberant Behavior Detected">Medium</a>
+                                                                            }
+                                                                            else if (data.Eventcount.Value <= 30 && data.NoPersonDetected.HasValue)
+                                                                            {
+                                                                                <a class="badge badge-warning" data-toggle="tooltip" title="Some Abberant Behavior Detected">Medium</a>
+                                                                            }
+                                                                            else if (data.Eventcount.Value <= 30)
+                                                                            {
+                                                                                <a class="badge badge-warning" data-toggle="tooltip" title="Some Abberant Behavior Detected">Medium</a>
+                                                                            }
+
+                                                                            else if (data.Eventcount.Value < 30)
+                                                                            {
+                                                                                <a class="badge badge-success" data-toggle="tooltip" title="Low Abberant Detection">Low</a>
+                                                                            }
+                                                                            else if (data.Eventcount.Value > 30 && data.Eventcount.Value < 100)
+                                                                            {
+                                                                                <a class="badge badge-warning" data-toggle="tooltip" title="Some Abberant Behavior Detected">Medium</a>
+                                                                            }
+                                                                            else if (data.Eventcount.Value >= 100)
+                                                                            {
+                                                                                <a class="badge badge-danger" data-toggle="tooltip" title="High Abberant Behavior Detected">High</a>
+                                                                            }
+                                                                        }
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="text-center">
+                                                            <div>
+                                                                <div style="font-size: x-small;">
+                                                                    Exam Start Time :@ConvertDateToRegion(data.StartedAt.Value)
+                                                                </div>
+                                                                <img class="lazy" data-original="@img/@data.StudentLatestImage" src="loader.gif" style="max-width: 200px; max-height:200px; width:100%">
+                                                                @if (data.LastEventDetected.HasValue)
+                                                                {
+                                                                    <div style="font-size: x-small;">
+                                                                        Last Camshot Time : @ConvertDateToRegion(data.LastEventDetected.Value)
+                                                                    </div>}
+                                                            </div>
+
+                                                            <div class="">
+                                                                <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 50 , "Approve"))" Text="" Style="background-color: green; color:black" Icon="check" data-toggle="tooltip" title="Approve"></RadzenButton>
+                                                                <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 3, "Flag"))" Text="" Icon="flag" data-toggle="tooltip" title="Flag"></RadzenButton>
+                                                                <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 3, "Yellow"))" Style="background-color: yellow; color:black" Icon="panorama_photosphere_select"></RadzenButton>
+                                                                <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 2, "Orange"))" Style="background-color: orange;color: black" Icon="photo_camera"></RadzenButton>
+                                                                <RadzenButton Size="Radzen.ButtonSize.Small" Click="@(args=>Approve(data, 1, "Red"))" Style="background-color: Red;color: black" Icon="people_outline"></RadzenButton>
+                                                                <RadzenButton ButtonStyle="ButtonStyle.Secondary" Size="Radzen.ButtonSize.Small" Click="@((args)=>ShowMessageModal(data.Id, data.StudentId,data.ExamId,null,data.SessionId, data.Student?.FullName))"
+                                                                              Text="" Icon="message" data-toggle="tooltip" title="Message"></RadzenButton>
+
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (MakeFullScreen)
+{
+    <style>
+        .content-header{
+            display: none;
+        }
+        .main-sidebar {
+            display: none;
+        }
+
+        .main-header{
+            display: none;
+        }
+        .main-footer {
+            display: none;
+        }
+        .content-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    </style>
+}
+
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject ExamStudentService ExamStudentService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@inject ExamService ExamService
+@inject SearchStudentService searchStudentService
+@inject StudentFacultyService studentFacultyService
+@inject LiveProctorService liveProctorService
+@inject LiveViewService liveViewService
+@inject IJSRuntime JsRuntime
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using Microsoft.AspNetCore.Identity
+
+@code
+{ int Count;
+    int PageSize;
+    int Skip;
+    int Top;
+
+    private bool MakeFullScreen { get; set; } = false;
+    public string Message { get; set; } = "GetMessage123";
+    public async void Show()
+    {
+        MakeFullScreen = !MakeFullScreen;
+        //try
+        //{
+        //    //Message = await JsRuntime.InvokeAsync<string>("GetMessage123", "World");
+        //    await JsRuntime.InvokeVoidAsync("WireJQueryEventHandler");
+        //}
+        //catch (JSException ex)
+        //{
+        //    Message = ex.Message;
+        //}
+        StateHasChanged();
+    }
+    private int ExamId;
+    private int studentId;
+    private List<Models.DB.PExamStudentProctoringStatus> SearchStudentList = new List<Models.DB.PExamStudentProctoringStatus>();
+    private List<Models.DB.PExamStudentProctoringStatus> LiveViewList = new List<Models.DB.PExamStudentProctoringStatus>();
+    List<string> SessionIds = new List<string>();
+
+    public string blobBaseURL { get; set; }
+
+    public string videoURL { get; set; }
+    public int mytest { get; set; }
+
+    public string DateRegion { get; set; }
+
+    string img = "";
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        DateRegion = Configuration["DateRegion"];
+        blobBaseURL = Configuration["blobBaseURL"];
+        videoURL = Configuration["videoURL"];
+        ExamId = 0;
+        studentId = 0;
+        spinnerService.Show();
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, null, null, null, true);
+        SearchStudentList = record;
+        LiveViewList = record;
+        img = blobBaseURL + "/save-image-blob";
+        spinnerService.Hide();
+        StateHasChanged();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            //await JsRuntime.InvokeAsync<object>("refreshGrid");
+            await JsRuntime.InvokeAsync<object>("refreshLiveView");
+        }
+    }
+
+    public string ConvertDateToRegion(DateTime date)
+    {
+
+        TimeZoneInfo tzi = TZConvert.GetTimeZoneInfo(DateRegion);
+        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(date, tzi);
+        return cstTime.ToString("MM/dd/yyyy hh:mm:ss");
+    }
+    public async Task RefreshGrid(bool showLoader = false)
+    {
+        if (showLoader)
+        {
+            spinnerService.Show();
+        }
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, null, null, null, true);
+        SearchStudentList = record;
+        if (showLoader)
+        {
+            spinnerService.Hide();
+        }
+    }
+    public async Task RefreshLiveView(bool showLoader = false)
+    {
+        if (showLoader)
+        {
+            spinnerService.Show();
+        }
+        //var record = await liveViewService.GetAllDataAsync();
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, null, null, null, true);
+        LiveViewList = record;
+        SearchStudentList = record;
+
+        if (showLoader)
+        {
+            spinnerService.Hide();
+        }
+    }
+    /*
+        public async Task Approve(Models.DB.PExamStudentProctoringStatus model, int status, string statusValue)
+        {
+            spinnerService.Show();
+            await searchStudentService.ApproveAsync(model.Id, model.StudentId, model.ExamId, status);
+
+            if (model.PProctroingEvaluation != null && model.PProctroingEvaluation.Count() > 0)
+            {
+                model.PProctroingEvaluation.FirstOrDefault().ProctoringStatus = status;
+            }
+
+            await SaveLog(model.Id, statusValue, false);
+            toastService.ShowSuccess("Status updated Successfully");
+            spinnerService.Hide();
+        }
+    */
+
+    public async Task Approve(Models.DB.PExamStudentProctoringStatus model, int status, string statusValue)
+    {
+        spinnerService.Show();
+
+        if (statusValue == "Flag")
+        {
+            await searchStudentService.ApproveAsync(model.Id, model.StudentId, model.ExamId, 4);
+        }
+        else
+        {
+            await searchStudentService.ApproveAsync(model.Id, model.StudentId, model.ExamId, status);
+        }
+
+        toastService.ShowSuccess("Status updated Successfully");
+        spinnerService.Hide();
+    }
+
+    public async Task ShowMessageModal(long id, int studentId, int examId, string filter, string sessionId, string studentName)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("filter", filter);
+        param.Add("sessionId", sessionId);
+        var result = await dialogService.OpenAsync<DialogMessagesPage>(studentName, param, new DialogOptions() { Width = "800px" });
+    }
+    public async Task ShowCompareImageModal(string imageName, string refImageName)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        param.Add("refImageName", refImageName);
+        var result = await dialogService.OpenAsync<DialogStudentCompareImagePage>("Student Image", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+    public async Task ShowImpersonationImageModal(long Id)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("id", Id);
+        var result = await dialogService.OpenAsync<DialogStudentImpersonationImage>("Spoof", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+    public async Task ShowImageModal(string imageName)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        var result = await dialogService.OpenAsync<DialogStudentImagePage>("Student Image", param, new DialogOptions() { Width = "600px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+
+    public async Task Showmodal(long id, int studentId, int examId, string sessionId, string filter)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("sessionId", sessionId);
+        param.Add("filter", filter);
+        var result = await dialogService.OpenAsync<DialogEventPage>("", param, new DialogOptions() { Width = "800px" });
+    }
+
+    public async Task SaveLog(long id, string statusValue, bool showmessage = true)
+    {
+        spinnerService.Show();
+        await searchStudentService.addExamStudentProctoringStatuslog(id, statusValue);
+        if (showmessage)
+        {
+            toastService.ShowSuccess("Status updated Successfully");
+        }
+        spinnerService.Hide();
+    }
+    public async Task CloseVideomodal(long id, string sessionId)
+    {
+        await searchStudentService.UpdateVideoStatus(sessionId, false);
+        SessionIds.Remove(sessionId);
+        StateHasChanged();
+    } }
+
+<style>
+    a.badge {
+        color: white !important;
+        font-size: 12px;
+    }
+
+    .btn-refresh {
+        float: right;
+        margin-bottom: 12px;
+    }
+
+    .btn-refreshLiveView {
+        float: right;
+        margin-bottom: 12px;
+    }
+
+    .video-block {
+        margin-bottom: 8px;
+        padding: 10px;
+        border: 1px solid #ada3a3;
+        border-radius: 10px;
+        margin-top: 10px;
+        margin-right: 14px;
+    }
+</style>

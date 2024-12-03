@@ -1,0 +1,30 @@
+﻿@using Faso.Blazor.SpinKit
+@using ExamsSchedule.Services
+
+@inject SpinnerService SpinnerService
+
+
+<div class="spinner-container hidden">
+    <SpinKitCircle />
+</div>
+
+@inject IJSRuntime JsRuntime
+@code
+{
+    protected bool IsVisible { get; set; }
+    protected override void OnInitialized()
+    {
+        SpinnerService.OnShow += ShowSpinner;
+        SpinnerService.OnHide += HideSpinner;
+    }
+
+    public void ShowSpinner()
+    {
+        JsRuntime.InvokeVoidAsync("showSpinner");
+    }
+
+    public void HideSpinner()
+    {
+        JsRuntime.InvokeVoidAsync("hideSpinner");
+    }
+}

@@ -1,0 +1,62 @@
+﻿@page "/dialogProctoringStatusLogs"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using ExamsSchedule.Services
+
+<RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive"
+            FilterMode="Radzen.FilterMode.Advanced" 
+            AllowPaging="true" PageSize="10" Data="@LogsList"
+            AllowSorting="true" TItem="Models.DB.pExamStudentProctoringStatusLogs">
+    <Columns>
+
+        @*<RadzenGridColumn TItem="Models.DB.pExamStudentProctoringStatusLogs" Property="Id" Title="Id" >
+            <Template Context="data">
+                @data.Id
+            </Template>
+        </RadzenGridColumn>*@
+        @*<RadzenGridColumn TItem="Models.DB.pExamStudentProctoringStatusLogs" Property="ProctoringStatuId" Title="Proctoring Status Id" Width="170px">
+            <Template Context="data">
+                @data.ProctoringStatuId
+            </Template>
+        </RadzenGridColumn>*@
+        <RadzenGridColumn TItem="Models.DB.pExamStudentProctoringStatusLogs" Property="StatusId" Title="Status">
+            <Template Context="data">
+                @data.StatusId
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.pExamStudentProctoringStatusLogs" Property="CreatedDate" Title="Log Date">
+            <Template Context="data">
+                @data.CreatedDate
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.pExamStudentProctoringStatusLogs" Property="CreatedBy" Title="Log By">
+            <Template Context="data">
+                @data.User?.Email
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@using Blazored.Toast.Services
+@using Radzen
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SearchStudentService searchStudentService
+@code {
+    [Parameter]
+    public long id { get; set; }
+
+    private List<Models.DB.pExamStudentProctoringStatusLogs> LogsList = new List<Models.DB.pExamStudentProctoringStatusLogs>();
+
+    public async Task CloseLogmodal()
+    {
+            dialogService.Close(true);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        LogsList = await searchStudentService.GetLogsDataAsync(id);
+        StateHasChanged();
+
+    }
+}

@@ -1,0 +1,155 @@
+﻿@page "/facultyupload"
+@using ExamsSchedule.Models.DB
+@using Radzen.Blazor
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Bulk Upload Faculty</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Faculty bulk load</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <EditForm Model="@facultyData" OnValidSubmit="Save">
+                                    <DataAnnotationsValidator />
+                                    <ValidationSummary />
+                                    <div style="text-align:left;">
+                                        <h6 class="mt-2">Bulk upload Faculty</h6>
+                                        <textarea rows="10"
+                                                  @bind-value="@facultyData.BulkEmails"
+                                                  @bind-value:event="oninput" Style="width:700px;" />
+                                        <h6 style="margin-top: 2rem; margin-left:5px;">
+                                            Make sure they are comma seperated. Ex: raj@gmail.com,karan@hotmail.com
+                                        </h6>
+                                        <div class="form-group">
+                                            <label>Password<span class="required-sign">*</span></label>
+                                            <InputText class="form-control" placeholder="Password" @bind-Value="@facultyData.Password" style="width: 30%;"></InputText>
+                                        </div>
+                                        <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">
+                                            <i class="fas fa-save"></i>&nbsp;Upload
+                                        </button>
+                                    </div>
+                                </EditForm>
+                                <br />
+                                <br />
+                                @if (listIdentity != null && listIdentity.Count() > 0)
+                                {
+                                    <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                                AllowSorting="true" Data="@listIdentity" TItem="ExamsSchedule.Models.BulkUploadRegisterViewModel">
+                                        <Columns>
+                                            <RadzenGridColumn TItem="ExamsSchedule.Models.BulkUploadRegisterViewModel" Property="Email" Title="Email" />
+
+                                            <RadzenGridColumn TItem="ExamsSchedule.Models.BulkUploadRegisterViewModel" Property="Id" Title="Errors">
+                                                <Template Context="data">
+                                                    @if (data.Errors != null && data.Errors.Count() > 0)
+                                                    {
+                                                        foreach (var item in data.Errors)
+                                                        {
+                                                            <div class="text-danger">@item.Description</div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="text-success">@data.Success</div>
+                                                    }
+                                                </Template>
+                                            </RadzenGridColumn>
+
+                                        </Columns>
+                                    </RadzenGrid>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using ExamsSchedule.Services
+@using Blazored.Toast.Services
+@inject TeacherService teacherService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@using ExamsSchedule.Models
+@using Microsoft.AspNetCore.Identity
+
+@code {
+
+    public BulkUploadRegisterViewModel facultyData = new BulkUploadRegisterViewModel();
+    public List<BulkUploadRegisterViewModel> listIdentity = new List<BulkUploadRegisterViewModel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    public async Task Save()
+    {
+        if (!string.IsNullOrWhiteSpace(facultyData.BulkEmails))
+        {
+            spinnerService.Show();
+            var list = facultyData.BulkEmails.Split(',');
+            listIdentity = new List<BulkUploadRegisterViewModel>();
+            foreach (var item in list)
+            {
+                if (!string.IsNullOrWhiteSpace(item))
+                {
+                    var userEmailItem = item.Trim();
+                    var entity = new RegisterViewModel
+                    {
+                        Email = userEmailItem,
+                        Password = facultyData.Password
+                    };
+                    var result = await teacherService.AddUserAsync(entity);
+                    if (!result.Succeeded)
+                    {
+                        listIdentity.Add(new BulkUploadRegisterViewModel
+                        {
+                            Email = userEmailItem,
+                            Errors = result.Errors
+                        });
+                    }
+                    else
+                    {
+                        listIdentity.Add(new BulkUploadRegisterViewModel
+                        {
+                            Email = userEmailItem,
+                            Success = "User saved successfully."
+                        });
+                    }
+                }
+            }
+            var errorRecords = listIdentity.Where(m => m.Errors != null && m.Errors.Any());
+            if (list.Count() == errorRecords.Count())
+            {
+                toastService.ShowError("Error occurred while uploading users");
+            }
+            else if (errorRecords.Count() == 0)
+            {
+                toastService.ShowSuccess("Added Successfully");
+            }
+            else
+            {
+                toastService.ShowInfo("Having error while saving some of the faculties, please refer detail");
+            }
+            facultyData.BulkEmails = null;
+            spinnerService.Hide();
+        }
+    }
+
+}

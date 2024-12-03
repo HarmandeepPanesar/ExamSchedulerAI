@@ -1,0 +1,326 @@
+﻿@page "/studentfaculty"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Faculty Student Mapping</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Faculty-Student Mapping</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+
+                            <div class="col-3">
+                                <label>Search Proctor</label><br />
+                                <RadzenAutoComplete Data=@userList TextProperty="UserName"
+                                                    LoadData=@LoadData
+                                                    Placeholder="Select Proctor"
+                                                    Change="@(args => ChangeTeacherOption(args))"
+                                                    Style="margin-bottom: 20px; width: 100%;" />
+
+                                @*<RadzenDropDown AllowClear="true" AllowFiltering="true"
+                                    LoadData=@LoadData
+                                    Data=@userList
+                                    @bind-Value=@identityUser Placeholder="Select Proctor"
+                                    TextProperty="UserName"
+                                    ValueProperty="ID"
+                                    Change="@(args => ChangeTeacherOption(identityUser))" />*@
+                                @if (IsSubmitted && identityUser == null)
+                                {
+                                    <br />
+                                    <span class="text-danger">The Faculty field is required.</span>
+                                }
+                            </div>
+                            <div class="col-3">
+                                <label>Select Exam</label><br />
+                                <RadzenAutoComplete 
+                                                Style="margin-bottom: 20px; width: 100%;"
+                                                Placeholder="Select Exam"
+                                                LoadData="LoadExamData"
+                                                Data=@ExamList
+                                                TextProperty="ExameName"
+                                                
+                                                Change="@(args => ChangeExamOption(args))" />
+                                @if (IsSubmitted && examId == 0)
+                                {
+                                    <br />
+                                    <span class="text-danger">The Faculty field is required.</span>
+                                }
+                            </div>
+                            <div class="col-3">
+                                <label>Search Student</label><br />
+                                <RadzenAutoComplete LoadData="@LoadStudentData"
+                                                    Placeholder="Select Student"
+                                                    Data=@StudentList
+                                                    TextProperty="FullName"
+                                                    Disabled="identityUser== null || string.IsNullOrEmpty(identityUser.Id) || examId == 0"
+                                                    Change="@(args => ChangeStudentOption(args))"
+                                                    Style="margin-bottom: 20px; width: 100%;" />
+                                @*<RadzenDropDown AllowClear="true" AllowFiltering="true" TValue="IEnumerable<int>"
+                                    @bind-Value=@studentId Multiple="true" Placeholder="Select Student"
+                                     Data=@StudentList
+                                     TextProperty="FullName"
+                                     ValueProperty="ExamStudentId"
+                                     Change="@(args => ChangeStudentOption(args))" />*@
+                                @if (IsSubmitted && (SelectedStudentList == null || SelectedStudentList.Count() == 0))
+                                {
+                                    <br />
+                                    <span class="text-danger">The Student field is required.</span>
+                                }
+                            </div>
+                            @*<div class="col-6">
+                                    <div class="text-right" style="color: #a19393;">
+                                        <small><b>NOTE:</b> Please click on assign studet button to save changes.</small>
+                                    </div>
+                                </div>*@
+
+                            @if (SelectedStudentList != null && SelectedStudentList.Count() > 0 )
+                            {
+                                <div class="col-12">
+                                    <div>
+                                        <table class="table table-striped table-bordered">
+                                            <thead class="ui-datatable-thead">
+                                                <tr class="ui-state-default">
+                                                    <th class="ui-state-default">Student Unique Id</th>
+                                                    <th class="ui-state-default">Student Name</th>
+                                                    <th class="ui-state-default">Birth Date</th>
+                                                    <th class="ui-state-default">Student Identity</th>
+                                                </tr>
+                                            </thead>
+                                            @foreach (var item in SelectedStudentList)
+                                            {
+
+                                                if (!(SelectedStudentList.Contains(student))) { 
+                                                <tr>
+                                                    <td>@item.StudentUniqueId</td>
+                                                    <td>@item.FirstName @item.MiddleName @item.LastName</td>
+                                                    <td>
+                                                        @*@item.StudentUniqueId*@
+                                                        @String.Format("{0:d}", item.DoB)
+                                                    </td>
+                                                    <td>@item.StudentIdentity</td>
+                                                </tr>
+                                                }
+                                            }
+                                        </table>
+                                    </div>
+
+                                </div>
+                            }
+                            <div class="col-6">
+                                <div style="text-align:left; margin-bottom:10px; margin-top:10px; margin-right:5px;">
+                                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@(args => AddStudentFaculty(identityUser))" Size="Radzen.ButtonSize.Small" Text="Assign Students"></RadzenButton>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@inject ExamStudentService examStudentService
+@inject SpinnerService spinnerService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@inject IToastService toastService
+@inject StudentFacultyService studentFacultyService
+@inject ExamService examService
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using Microsoft.AspNetCore.Identity
+@using System.Text.RegularExpressions;
+@code {
+    int Skip;
+    int Top;
+    private List<IdentityUser> userList = new List<IdentityUser>();
+    private List<Models.DB.PStudent> StudentList = new List<Models.DB.PStudent>();
+    private List<Models.DB.PStudent> SelectedStudentList = new List<Models.DB.PStudent>();
+
+    private List<Models.DB.PExam> ExamList = new List<Models.DB.PExam>();
+
+
+    private List<Models.DB.PExamStudent> ExamStudentsList = new List<Models.DB.PExamStudent>();
+
+    //private IList<ExamsSchedule.Models.DB.AspNetUsers> userList;
+    //IEnumerable<int> values = new int[] { };
+    private IdentityUser identityUser;
+
+    public Models.DB.PStudent student;
+    //private int[] studentId;
+    //IEnumerable<int> StudentID = new int[] { };
+    //IEnumerable<int> studentId = new int[] { };
+
+    public int examId;
+    //string value = "";
+    public bool IsSubmitted { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //ExamList = await examService.GetAllDataAsync();
+    }
+
+    async Task LoadData(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            userList = await teacherService.GetAllDataAsync(args.Filter);
+            StateHasChanged();
+        }
+    }
+
+    async Task LoadStudentData(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            StudentList = await studentService.SearchAssignStudentAsync(examId, args.Filter);
+            StateHasChanged();
+        }
+    }
+    async Task LoadExamData(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            ExamList = await examService.GetAllDataAsync(Skip,Top,args.Filter);
+            StateHasChanged();
+        }
+    }
+
+
+    public async Task AddStudentFaculty(IdentityUser identity)
+    {
+        IsSubmitted = true;
+        var studentIds = SelectedStudentList.Select(m => m.Id);
+        if (identity != null && studentIds != null && studentIds.Count() > 0)
+        {
+            spinnerService.Show();
+            var studentFaculty = await studentFacultyService.AddstudentfacultyAsync(identityUser, studentIds, true, examId);
+            toastService.ShowSuccess("Student assigned Successfully");
+            spinnerService.Hide();
+            StateHasChanged();
+        }
+    }
+
+    public async Task ChangeTeacherOption(object username)
+    {
+        if (username != null)
+        {
+            var strUsername = username.ToString();
+            var selectedUser = userList.Where(m => m.Email == strUsername).FirstOrDefault();
+
+            if(selectedUser != null)
+            {
+                identityUser = selectedUser;
+                await GetStudents(examId);
+            }
+        }
+        else
+        {
+            identityUser = null;
+        }
+    }
+
+
+    public async Task ChangeStudentOption(object studentname)
+    {
+        if (studentname != null )
+        {
+            string strStudent = studentname.ToString();
+            var selectedStudent = StudentList.Where(m => m.FullName == strStudent).FirstOrDefault();
+
+            if (selectedStudent != null)
+            {
+                if (SelectedStudentList.FirstOrDefault(m=>m.Id==selectedStudent.Id)==null)
+                {
+                    var pStu = SelectedStudentList;
+                    pStu.Add(selectedStudent);
+                    SelectedStudentList = pStu;
+                }
+
+            }
+            StateHasChanged();
+        }
+
+    }
+
+    public async Task ChangeExamOption(object examname)
+    {
+        if (examname != null)
+        {
+            var strExamname = examname.ToString().ToLower();
+            var sExam = ExamList.Where(m => m.ExameName.ToLower() == strExamname).FirstOrDefault();
+
+            if (sExam != null)
+            {
+                var selectedExam = sExam.ExamId;
+                examId = selectedExam;
+                spinnerService.Show();
+                //    var data = await studentFacultyService.GetExamAsync(examId);
+                var data = await examStudentService.GetAllByExamAsync(examId);
+                StudentList = new List<Models.DB.PStudent>();
+                foreach (var item in data)
+                {
+                    var Stud = item.Student;
+                    Stud.ExamStudentId = item.ExamStudentId;
+                    StudentList.Add(Stud);
+                }
+                spinnerService.Hide();
+                await GetStudents(examId);
+
+            }
+            StateHasChanged();
+
+        }
+
+    }
+
+    public async Task GetStudents(int examId = 0)
+    {
+        spinnerService.Show();
+        //selected student
+        if (identityUser != null)
+        {
+
+            var selectedstudent = await studentFacultyService.GetDataAsync(identityUser, examId, student);
+            if (selectedstudent != null && selectedstudent.Count() > 0)
+            {
+                SelectedStudentList = selectedstudent.Select(m => m.ExamStudent?.Student).ToList();
+            }
+            else
+            {
+                SelectedStudentList = new List<Models.DB.PStudent>();
+            }
+        }
+        else
+        {
+            SelectedStudentList = new List<Models.DB.PStudent>();
+        }
+        spinnerService.Hide();
+    }
+
+}
+<style>
+    .ui-dropdown {
+        width: 100% !important;
+    }
+</style>

@@ -1,0 +1,162 @@
+﻿@page "/examupload"
+@using ExamsSchedule.Models.DB
+@using Radzen.Blazor
+@using System.Net.Http
+@using System.Net.Http.Json
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Bulk upload exams</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Exam Bulk Load</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-12">
+                            <EditForm Model="@model" OnValidSubmit="Save">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+                                <div style="text-align:left; margin-bottom:10px; margin-top:10px; margin-right:5px; margin-left:10px;">
+                                    <h6 class="mt-2">Bulk Upload Exams</h6>
+                                    <textarea rows="10"
+                                              @bind-value="@model.data"
+                                              @bind-value:event="oninput" Style="width:700px;" />
+                                    <h6 class="mt-2">List quiz module Ids from your LMS. Make sure they are comma seperated. Ex: 1245,7987,2123</h6>
+                                    <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">
+                                        <i class="fas fa-save"></i>&nbsp;Upload
+                                    </button>
+
+                                </div>
+
+                            </EditForm>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using ExamsSchedule.Services
+@using Blazored.Toast.Services
+@using ExamsSchedule.Models
+@inject ExamService examService
+@inject IToastService toastService
+@inject SearchStudentService searchStudentService
+@inject SpinnerService spinnerService
+@inject HttpClient Http
+
+
+@code {
+    //string value;
+    //void OnChange(string value, string name)
+    //{
+    //}
+
+    public Cm model = new Cm();
+    public List<IBrowserFile> imageFile = new List<IBrowserFile>();
+    private ExamUploadModel examJson;
+    public List<ExamUploads> ExamUploadFile = new List<ExamUploads>();
+    protected override async Task OnInitializedAsync()
+    {
+        ExamUploadFile = await searchStudentService.GetExamUploads();
+    }
+
+    //private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    //{
+    //    var maxAllowedFiles = 3;
+    //    foreach (var imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+    //    {
+    //        imageFile.Add(imageFile1);
+    //    }
+    //}
+    //public async Task uploadData()
+    //{
+    //    if (imageFile != null)
+    //    {
+    //        spinnerService.Show();
+    //        var examUpload = await searchStudentService.ImportData(imageFile,filterByType);
+    //        if (examUpload != null)
+    //        {
+    //            var saveExamUploadFile = await searchStudentService.SaveExamUploadFile(examUpload, filterByType);
+    //            ExamUploadFile = await searchStudentService.GetExamUploads();
+    //        }
+    //        StateHasChanged();
+    //        spinnerService.Hide();
+    //    }
+    //}
+    //public async Task DownloadData(string filename)
+    //{
+
+    //    spinnerService.Show();
+
+    //    var dowloaded =  searchStudentService.DownloadFile(filename);
+    //    await Task.Delay(5000); 
+    //    spinnerService.Hide();
+    //    if(dowloaded != null)
+    //    {
+    //        toastService.ShowSuccess("File Saved Successfully");
+    //    }
+
+
+    //}
+
+
+    public async Task Save()
+    {
+        if (model != null && !string.IsNullOrEmpty(model.data))
+        {
+            var data = model.data.ToString().Split(",");
+
+            spinnerService.Show();
+            var record = await searchStudentService.GetlmsDataAsync();
+            foreach (string d in data)
+            {
+                examJson = await Http.GetFromJsonAsync<ExamUploadModel>($"{record.WebServiceLink}?wstoken={record.SecurityToken}&wsfunction=core_course_get_course_module&moodlewsrestformat=json&cmid=" + d);
+
+                if (examJson.cm != null)
+                {
+                    var result = await examService.BulkUploadExams(examJson);
+                }
+            }
+
+            model.data = string.Empty;
+            toastService.ShowSuccess("Added Successfully");
+            spinnerService.Hide();
+        }
+    }
+
+}
+<style>
+    ::-webkit-file-upload-button {
+        cursor: pointer;
+        background-color: #479cc8;
+        color: #fff;
+        -webkit-appearance: button;
+        border-color: #479cc8;
+        box-shadow: none;
+        font-size: 1.0625rem;
+        font-weight: normal;
+        padding: 0 2rem;
+        height: 2.1875rem;
+        border-radius: 4px;
+        border: none;
+        outline: none;
+        line-height: initial;
+    }
+</style>

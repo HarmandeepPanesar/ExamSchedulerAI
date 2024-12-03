@@ -1,0 +1,290 @@
+﻿@page "/students"
+@*@inherits ExamsSchedule.Pages.StudentsComponent*@
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Student List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Student List</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-6">
+                            <div>
+                                <RadzenTextBox @bind-Value="txtSearchStudent"
+                                               Placeholder="Search Student" @onkeyup="@(e => InputKeyPressed(e))"
+                                               Style="margin-bottom: 20px; width: 400px;  margin-top: 10px; margin-left: 20px;" />
+
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary"Click="@FilterStudents" Size="Radzen.ButtonSize.Medium"
+                                              Text="Search" Icon="search"></RadzenButton>
+
+                                @if (txtSearchStudent != null)
+                                {
+                    <span>&nbsp;</span>
+                                    <RadzenButton Click="@ClearFilterStudents" Size="Radzen.ButtonSize.Medium"
+                                                  Text="Clear" Icon="clear" ButtonStyle="ButtonStyle.Light"></RadzenButton>}
+
+                            </div>
+                            <div style="margin-left:20px;">
+                                @*<Radzen.Blazor.RadzenLabel Text="@PageCountDisplay"></Radzen.Blazor.RadzenLabel>*@
+                                @{ int currentCount = 0;
+                                                if (StudentList != null)
+                                                {
+                                                    currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                                } }
+                                <b>Showing </b>@currentCount<b> to </b>@(StudentList != null ? (StudentList.Count()+ currentCount)-1 : 0) <b> of </b> @Count <b>entries</b>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div style="text-align:right; margin-bottom:10px; margin-top:10px; margin-right:20px;">
+                                <AuthorizeView Roles="Admin">
+                                    <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@ShowAddStudentModal" Size="Radzen.ButtonSize.Medium"
+                                                  Text="Add New Student" Icon="add"></RadzenButton>
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+                        <RadzenGrid Count="@Count" Data="@StudentList" LoadData="@LoadData" @ref="ordersGrid"
+                                    AllowSorting="true" AllowFiltering="false" AllowPaging="true" PageSize="@PageSize"
+                                    TItem="Models.DB.PStudent">
+
+                            <Columns>
+                                @*<RadzenGridColumn TItem="Exam" Property="ExamId" Title="Exam ID" />*@
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="FirstName" Title="Row #" Width="5%">
+                                    <Template Context="FirstName">
+                                        <Radzen.Blazor.RadzenLabel Text="@((StudentList.IndexOf(FirstName) + 1 + Skip).ToString())"></Radzen.Blazor.RadzenLabel>
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="StudentUniqueId" Title="Unique Id (LMS Link)" Width="5%">
+                                    <Template Context="data">
+                                        @data.StudentUniqueId
+                                    </Template>
+
+                                </RadzenGridColumn>
+
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="FirstName" Title="Student Name" Width="10%">
+                                    <Template Context="data">
+                                        @if (data.ImageName != null)
+                                        {
+                                            <a @onclick="@(args => ShowImageModal(data.ImageName))" style="cursor: pointer;">@data.FirstName @data.MiddleName @data.LastName&nbsp;&nbsp;<i class="fas fa-image"></i></a>
+ }
+                                        else
+                                        {
+                                            @data.FirstName @data.MiddleName @data.LastName}
+
+                                    </Template>
+                                    <FooterTemplate>
+                                        @{ int currentCount = 0;
+                                            if (StudentList != null)
+                                            {
+                                                currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                            } }
+                                        @currentCount<b> to </b>@(StudentList != null ? (StudentList.Count()+ currentCount)-1 : 0) <b> of </b> @Count <b>entries</b>
+                                    </FooterTemplate>
+                                </RadzenGridColumn>
+
+                                @*<RadzenGridColumn TItem="Models.DB.PStudent" Property="DoB" Title="Birth Date">
+            <Template Context="data">
+                @String.Format("{0:d}", data.DoB)
+            </Template>
+        </RadzenGridColumn>*@
+
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="Email" Title="Email" Width="10%">
+                                    <Template Context="data">
+                                        @data.Email
+                                    </Template>
+                                </RadzenGridColumn>
+
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="StudentIdentity" Title="Identity" Width="5%" />
+
+                                @*<RadzenGridColumn TItem="Models.DB.PStudent" Property="CreatedDate" Title="Created Date">
+            <Template Context="data">
+                @String.Format("{0:d}", data.CreatedDate)
+            </Template>
+        </RadzenGridColumn>*@
+                                @*<RadzenGridColumn TItem="Models.DB.PStudent" Property="AllowNoCamera" Title="Camera Exception">
+                                            <Template Context="data">
+
+                                                @if (data.AllowNoCamera)
+                                                {
+                            <div>
+                                <span class="badge badge-danger">Yes</span>
+                            </div>
+        }
+
+                                            </Template>
+                                        </RadzenGridColumn>*@
+
+                                <RadzenGridColumn TItem="Models.DB.PStudent" Property="Id" Title="Student Exams" Filterable="false" Sortable="false">
+                                    <Template Context="data">
+                                        @if (data.PExamStudent != null)
+                                        {
+                                            @foreach (var item in data.PExamStudent)
+                                            {
+                                                <span class="badge badge-info" data-toggle="tooltip" title="@item.Exam?.ExameName">@item.Exam?.ExameName</span>
+                                            }}
+                                    </Template>
+                                </RadzenGridColumn>
+                                <AuthorizeView Roles="Admin">
+                                    <RadzenGridColumn TItem="Models.DB.PStudent" Property="Id" Title="Action" Filterable="false" Sortable="false" Width="7%">
+                                        <Template Context="data">
+                                            <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="edit" Size="Radzen.ButtonSize.Small" Click="@(args => editRow(data))" />
+                                            <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="Radzen.ButtonSize.Small" Click="@(args => deleteRow(data))" />
+                                        </Template>
+                                    </RadzenGridColumn>
+                                </AuthorizeView>
+                                   
+
+                            </Columns>
+                        </RadzenGrid>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject StudentService studentService
+@using Microsoft.AspNetCore.Identity
+@inject IJSRuntime JsRuntime
+@inject IConfiguration Configuration
+@using Microsoft.Extensions.Configuration
+@code
+{
+    int Count;
+    int PageSize;
+    int Skip;
+    int Top;
+    int CurrentPage;
+    string PageCountDisplay;
+    RadzenGrid<Models.DB.PStudent> ordersGrid;
+
+
+    List<ExamsSchedule.Models.DB.PStudent> StudentList;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        spinnerService.Show();
+        PageSize = Convert.ToInt32(Configuration["pageSize"]);
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+
+    public string txtSearchStudent { get; set; }
+
+    public async Task ClearFilterStudents()
+    {
+        txtSearchStudent = null;
+        await GetStudentListAsync(txtSearchStudent);
+    }
+
+    public async Task FilterStudents()
+    {
+        Skip = 0;
+        await GetStudentListAsync(txtSearchStudent);
+    }
+
+    public async Task GetStudentListAsync(string filter = null)
+    {
+        StudentList = await studentService.GetAllDataAsync(Skip, Top, filter);
+        Count = await studentService.GetAllDataCountAsync(filter);
+        PageCountDisplay = $"Total Students : {Count}";
+    }
+
+    protected async System.Threading.Tasks.Task LoadData(LoadDataArgs args)
+    {
+        Skip = args.Skip.Value;
+        Top = args.Top.Value;
+        await GetStudentListAsync();
+    }
+    protected async Task InputKeyPressed(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            //call login or what ever you want when user pressed Enter
+            await FilterStudents();
+        }
+    }
+    async Task ShowAddStudentModal()
+    {
+        var result = await dialogService.OpenAsync<DialogStudentPage>("Add New Record", null
+            , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetStudentListAsync();
+        }
+    }
+
+    public async Task editRow(Models.DB.PStudent student)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("SelectedStudent", student);
+        var result = await dialogService.OpenAsync<DialogStudentPage>("Add New Record", param
+            , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetStudentListAsync();
+        }
+    }
+
+    public async Task deleteRow(Models.DB.PStudent student)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure,you want to delete?");
+        if (confirmed)
+        {
+            spinnerService.Show();
+            await studentService.DeleteStudent(student);
+            await GetStudentListAsync();
+            spinnerService.Hide();
+            toastService.ShowSuccess("Record is deleted Successfully");
+        }
+    }
+
+    public async Task ShowImageModal(string imageName)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        var result = await dialogService.OpenAsync<DialogStudentImagePage>("Student Image", param, new DialogOptions() { Width = "600px" });
+        if (result == true)
+        {
+
+        }
+    } }
+
+@if (StudentList == null || StudentList.Count() == 0)
+{
+<style>
+    .file-container .ui-datatable-scrollable-header-box tr th.ui-state-default:first-child,
+    .file-container .ui-datatable-scrollable-body tr td:first-child,
+    .file-container .ui-datatable-scrollable-footer-box tr td:first-child {
+        width: 40px !important;
+    }
+</style>
+}
+

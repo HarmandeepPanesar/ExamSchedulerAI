@@ -1,0 +1,97 @@
+﻿@page "/systemsetup"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Services
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>LMS Setup</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">LMS integration</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-12">
+                                <EditForm Model="@integrationModel" OnValidSubmit="SaveData">
+                                    <DataAnnotationsValidator />
+                                    <ValidationSummary />
+                                    <div style="text-align:left; margin-bottom:10px; margin-top:10px; margin-right:5px; margin-left:10px;">
+                                        <h6 class="mt-2">LMS Web Service link</h6>
+                                        <InputText class="form-control" @bind-Value="@integrationModel.WebServiceLink" style="width: 70%;"></InputText>
+                                        <h6 class="mt-2">Security Token</h6>
+                                        <InputText class="form-control" @bind-Value="@integrationModel.SecurityToken" placeholder="WS Token" style="width: 30%;"></InputText>
+                                        <h6></h6>
+                                        <h6 class="mt-2">Allow exam without camera</h6>
+                                        <InputCheckbox @bind-Value="@integrationModel.AllowNoCamera"></InputCheckbox>
+                                        <h6></h6>
+                                        <h6 class="mt-2">Enable Proctor-Student Chat</h6>
+                                        <InputCheckbox @bind-Value="@integrationModel.EnableChat"></InputCheckbox>
+                                        <h6></h6>
+                                        <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit"><i class="fas fa-save"></i>&nbsp;Save</button>
+                                        @*<RadzenButton Size="Radzen.ButtonSize.Medium" Icon="save"></RadzenButton>*@
+                                    </div>
+                                </EditForm>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using Blazored.Toast.Services
+@using Radzen
+@inject SearchStudentService searchStudentService
+@inject DialogService dialogService
+@inject IToastService toastService
+@code {
+    //string value;
+
+    public ExamsSchedule.Models.DB.Lmsintegration integrationModel = new ExamsSchedule.Models.DB.Lmsintegration();
+
+
+    //void OnChange(string value, string name)
+    //{
+
+    //}
+    protected override async Task OnInitializedAsync()
+    {
+
+        var record = await searchStudentService.GetlmsDataAsync();
+        if (record != null)
+            integrationModel = record;
+    }
+
+    public async Task SaveData()
+    {
+        if (integrationModel.Id == 0)
+        {
+
+            var result = await searchStudentService.SaveDataAsync(integrationModel);
+            toastService.ShowSuccess("New Record is Added Successfully");
+
+        }
+        else
+        {
+
+            var result = await searchStudentService.UpdateDataAsync(integrationModel);
+            toastService.ShowSuccess("Record is Updated Successfully");
+
+        }
+    }
+
+
+}

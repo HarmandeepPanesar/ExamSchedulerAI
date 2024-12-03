@@ -1,0 +1,459 @@
+﻿@page "/searchstudent"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using TimeZoneConverter;
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Proctor</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Proctor</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-3">
+                                <label>Student</label><br />
+                                <RadzenDropDown AllowClear="true" AllowFiltering="true" TValue="int"
+                                                @bind-Value=@studentId Placeholder="Search Student"
+                                                Data=@StudentList
+                                                TextProperty="FullName"
+                                                Change="@(args=> ShowData(studentId , ExamId))"
+                                                ValueProperty="Id"
+                                                Style="width:100%" />
+                            </div>
+                            <div class="col-3">
+                                <label>Search Exams</label><br />
+                                <RadzenAutoComplete Style="width: 100%;"
+                                                    Placeholder="Select Exam"
+                                                    LoadData="LoadExamData"
+                                                    Data=@ExamList
+                                                    TextProperty="ExameName"
+                                                    Change="@(args => ChangeExamOption(args))" />
+                                @*<RadzenDropDown AllowClear="true" AllowFiltering="true"
+                                    @bind-Value=@ExamId Placeholder="Search Exams" Data=@ExamList
+                                    TextProperty="ExameName"
+                                    Change="@(args=> ShowData(studentId , ExamId))"
+                                    ValueProperty="ExamId"
+                                    Style="width: 100%" />*@
+                            </div>
+                            <div class="col-3">
+                                <label>Filter By Days </label><br />
+                                <RadzenDropDown AllowClear="true" AllowFiltering="true"
+                                                @bind-Value=@filterByDays Placeholder="Filter by Days" Data="options"
+                                                Change="@(args=> ShowData(studentId , ExamId))"
+                                                Style="width: 100%" />
+                            </div>
+                            <div class="col-3">
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary" class="btn-refresh" Click="@(()=> RefreshGrid(true))" Size="Radzen.ButtonSize.Medium" Text="Refresh" Icon="refresh" Disabled="(studentId == 0 && ExamId == 0 && string.IsNullOrEmpty(filterByDays))"></RadzenButton>
+                            </div>
+
+                        </div>
+
+                        <RadzenButton class="DatePickerBtn" Text="@DateRangeButtonText" ButtonStyle="ButtonStyle.Secondary" @bind-Value="DateRangeButtonText" Click="@(()=> Show())" /><div hidden="@isHide" style="color: red;">Custom Date Range must be correct</div>
+                        <div hidden="@PopupVisibleDateRangePicker">
+                            <div id="" class="daterangepicker show-ranges show-calendar opensright" style="">
+                                <div class="ranges">
+                                    <ul>
+                                        <li class="@(rangeClass == "Today" ? "active" : "")" @onclick="@(()=> setDateRange("Today"))">Today</li><!--!-->
+                                        <li class="@(rangeClass == "Yesterday" ? "active" : "")" @onclick="@(()=> setDateRange("Yesterday"))">Yesterday</li><!--!-->
+                                        <li class="@(rangeClass == "Last7Days" ? "active" : "")" @onclick="@(()=> setDateRange("Last7Days"))">Last 7 Days</li><!--!-->
+                                        <li class="@(rangeClass == "Last30Days" ? "active" : "")" @onclick="@(()=> setDateRange("Last30Days"))">Last 30 Days</li><!--!-->
+                                        <li class="@(rangeClass == "ThisMonth" ? "active" : "")" @onclick="@(()=> setDateRange("ThisMonth"))">This Month</li><!--!-->
+                                        <li class="@(rangeClass == "LastMonth" ? "active" : "")" @onclick="@(()=> setDateRange("LastMonth"))">Last Month</li><!--!-->
+                                        <li class="@(rangeClass == "Custom" ? "active" : "")" @onclick="@(()=> setDateRange("Custom"))">Custom range</li><!--!-->
+                                    </ul>
+                                </div>
+
+                                <div class="drp-calendar left ">
+                                    @if (rangeClass != "Custom")
+                                    {
+                                        <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedFromDates", "MM/dd/yyyy"))" TimeOnly="false" DateFormat="d" Disabled="true" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedFromDates", "MM/dd/yyyy"))" TimeOnly="false" DateFormat="d" Disabled="false" />
+
+                                    }
+
+
+                                </div>
+                                <div class="drp-calendar right">
+                                    @if (rangeClass != "Custom")
+                                    {
+                                        <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedToDates", "MM/dd/yyyy"))" DateFormat="d" Disabled="true" />
+
+                                    }
+                                    else
+                                    {
+                                        <RadzenDatePicker TValue="DateTime" Inline="true" Change="@(args => OnChange(args, "SelectedToDates", "MM/dd/yyyy"))" DateFormat="d" Disabled="false" />
+
+                                    }
+                                </div>
+
+                                <div class="drp-buttons">
+                                    @if (rangeClass == "Custom")
+                                    {
+                                        <button class="cancelBtn btn btn-sm btn-default" type="button" @onclick="@(() => ClearDateRangePicker())">
+                                            Clear
+                                        </button>
+                                        <button class="applyBtn btn btn-sm btn-secondary" type="button"
+                                                disabled="@(!(SelectedFromDates.HasValue) || !(SelectedToDates.HasValue))"
+                                                @onclick="@(() => ApplyDateRange())">
+                                            Apply
+                                        </button>
+                                    }
+                                    <button class="cancelBtn btn btn-sm btn-default" type="button" @onclick="@(() => CloseDateRange())">
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <StudentExamProctorComponent SearchStudentList="SearchStudentList " />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject ExamStudentService ExamStudentService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@inject ExamService ExamService
+@inject SearchStudentService searchStudentService
+@inject LiveProctorService liveProctorService
+@inject StudentFacultyService studentFacultyService
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject IJSRuntime JsRuntime
+@using Microsoft.AspNetCore.Identity
+
+@code
+        {
+    public bool isHide { get; set; } = true;
+    private bool PopupVisibleDateRangePicker { get; set; } = true;
+    private void Show()
+    {
+        PopupVisibleDateRangePicker = !PopupVisibleDateRangePicker;
+        StateHasChanged();
+    }
+    private void ShowError()
+    {
+        isHide = !isHide;
+        StateHasChanged();
+    }
+    //DateTime CurrentselectedToDate { get; set; }
+    //DateTime CurrentselectedFromDate { get; set; }
+    DateTime? SelectedFromDates { get; set; } = null;
+    public string rangeClass { get; set; } = "Custom";
+    int Skip;
+    int Top;
+    //bool PopupVisibleDateRangePicker { get; set; }
+    private string filterByDays;
+    DateTime? SelectedToDates { get; set; } = null;
+    private int ExamId;
+    private int studentId;
+    private List<Models.DB.PExamStudentProctoringStatus> SearchStudentList = new List<Models.DB.PExamStudentProctoringStatus>();
+    private List<Models.DB.PStudent> StudentList = new List<Models.DB.PStudent>();
+    private List<Models.DB.PExam> ExamList = new List<Models.DB.PExam>();
+
+    public string[] options = new string[] { "Last 5 Days", "Last 30 Days", "Last 90 Days" };
+    public string DateRangeButtonText { get; set; } = "Choose dates..";
+    protected override async Task OnInitializedAsync()
+    {
+        StudentList = await studentService.GetAllDataAsync();
+        ExamList = await ExamService.GetAllDataAsync();
+    }
+
+    public async void ClearDateRangePicker()
+    {
+        SelectedFromDates = null;
+        SelectedToDates = null;
+        PopupVisibleDateRangePicker = true;
+        DateRangeButtonText = "Choose dates..";
+        spinnerService.Show();
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, null, null, false);
+        SearchStudentList = record;
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+    private void CloseDateRange()
+    {
+        ClearDateRangePicker();
+    }
+    private async void ApplyDateRange()
+    {
+        PopupVisibleDateRangePicker = true;
+
+        if (rangeClass == "Custom")
+        {
+            if (SelectedFromDates.HasValue && SelectedToDates.HasValue)
+            {
+                if (SelectedToDates.Value < SelectedFromDates.Value)
+                {
+                    ShowError();
+                }
+                else
+                {
+                    isHide = true;
+                    DateRangeButtonText = SelectedFromDates?.ToString("MM/dd/yyyy") + " - " + SelectedToDates?.ToString("MM/dd/yyyy");
+                    spinnerService.Show();
+                    var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates, false);
+                    SearchStudentList = record;
+                    spinnerService.Hide();
+                }
+            }
+            else
+            {
+                DateRangeButtonText = "Choose dates..";
+            }
+        }
+        StateHasChanged();
+    }
+    private async void setDateRange(string range)
+    {
+        if (range == "Today")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            //var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            DateRangeButtonText = start.ToString("MM/dd/yyyy"); // + " - " + last.ToString("MM/dd/yyyy");
+            SelectedFromDates = start;
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Yesterday")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-1));
+            //SelectedToDates.Add(new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-1));
+            DateRangeButtonText = start.ToString("MM/dd/yyyy");
+            SelectedFromDates = start;
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Last7Days")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-7));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, start, last, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "Last30Days")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day).AddDays(-30));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, start, last, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "ThisMonth")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+            var last = (new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, start, last, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+        if (range == "LastMonth")
+        {
+            isHide = true;
+            SelectedFromDates = null;
+            SelectedToDates = null;
+            var start = (new DateTime(DateTime.Now.Year, (DateTime.Now.Month - 1), 1));
+            var last = (new DateTime(DateTime.Now.Year, (DateTime.Now.Month - 1), 1).AddMonths(1).AddDays(-1));
+            SelectedFromDates = start;
+            SelectedToDates = last;
+            DateRangeButtonText = start.ToString("MM/dd/yyyy") + " - " + last.ToString("MM/dd/yyyy");
+            spinnerService.Show();
+            var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, start, last, false);
+            SearchStudentList = record;
+            spinnerService.Hide();
+        }
+
+        rangeClass = range;
+        if (range != "Custom")
+        {
+            PopupVisibleDateRangePicker = true;
+        }
+        StateHasChanged();
+    }
+
+    async Task LoadExamData(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter))
+        {
+            ExamList = await ExamService.GetAllDataAsync(Skip, Top, args.Filter);
+            StateHasChanged();
+        }
+    }
+    public async Task RefreshGrid(bool showLoader = true)
+    {
+        spinnerService.Show();
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates);
+        SearchStudentList = record;
+        spinnerService.Hide();
+    }
+
+    public async Task ShowData(int studentId, int ExamId)
+    {
+        spinnerService.Show();
+        var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates);
+        SearchStudentList = record;
+        spinnerService.Hide();
+    }
+    void OnChange(DateTime? value, string name, string format)
+    {
+        if (name == "SelectedFromDates")
+        {
+            SelectedFromDates = (DateTime)value;
+        }
+        else
+        {
+            SelectedToDates = (DateTime)value;
+        }
+    }
+    public async Task ChangeExamOption(object examname)
+    {
+        if (examname != null)
+        {
+            var strExamname = examname.ToString();
+            var sExam = ExamList.Where(m => m.ExameName == strExamname).FirstOrDefault();
+
+            if (sExam != null)
+            {
+                var selectedExam = sExam.ExamId;
+                ExamId = selectedExam;
+                spinnerService.Show();
+                var record = await liveProctorService.GetDataAsync(studentId, ExamId, filterByDays, SelectedFromDates, SelectedToDates);
+                SearchStudentList = record;
+                spinnerService.Hide();
+            }
+            StateHasChanged();
+        }
+
+    }
+
+    public async Task ShowEventsModal(long id, int studentId, int examId, string filter, string sessionId)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        param.Add("studentId", studentId);
+        param.Add("examId", examId);
+        param.Add("filter", filter);
+        param.Add("sessionId", sessionId);
+        var result = await dialogService.OpenAsync<DialogAllEventsPage>("", param, new DialogOptions() { Width = "600px" });
+    }
+
+    public async Task ShowLogsModal(long id)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("id", id);
+        var result = await dialogService.OpenAsync<DialogProctoringStatusLogsPage>("Event Status Logs", param, new DialogOptions() { Width = "800px" });
+        if (result == true)
+        {
+            StateHasChanged();
+        }
+    }
+}
+
+<style>
+    .disable-dates-container {
+        pointer-events: none;
+        opacity: 0.4;
+    }
+
+    .daterangepicker {
+        position: relative !important;
+    }
+
+    .date .ui-datepicker:not(.ui-datepicker-inline) {
+        z-index: 1050;
+    }
+
+    a.badge {
+        color: white !important;
+        font-size: 12px;
+    }
+    .ui-dropdown-panel.ui-widget.ui-widget-content.ui-corner-all.ui-shadow.ui-popup {
+        z-index: 3002 !important;
+    }
+    .btn-refresh {
+        float: right;
+        margin-top: 32px;
+    }
+
+    .daterangepicker .drp-calendar.right {
+        padding: 8px;
+    }
+
+    .daterangepicker .drp-calendar.left {
+        padding: 8px;
+        margin-right: 70px !important;
+    }
+
+    .DatePickerBtn {
+        background-color: #479cc8 !important;
+        margin-bottom: 10px;
+    }
+
+    .ui-dropdown-label.ui-inputtext.ui-corner-all {
+        height: 22px;
+        padding: 0px;
+        margin: 0px;
+    }
+</style>

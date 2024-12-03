@@ -1,0 +1,137 @@
+﻿@page "/reports"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Camera Access Issue Log</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Reports</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-3">
+
+                                <label>Filter By Days </label><br />
+                                <RadzenDropDown AllowClear="true" AllowFiltering="true"
+                                                @bind-Value=@filterByDays Placeholder="Filter by Days" Data="options"
+                                                Change="@(args=> ShowData())"
+                                                Style="width: 100%" />
+
+                            </div>
+                        </div>
+                        <RadzenGrid Data="@LogsList" @ref="ordersGrid"
+                                    AllowSorting="true" AllowFiltering="false" AllowPaging="true" PageSize="@PageSize"
+                                    TItem="Models.pLogs">
+
+                            <Columns>
+
+                                @*<RadzenGridColumn TItem="Models.pLogs" Property="Id" Title="Id">
+                                    <Template Context="data">
+                                        @data.Id
+                                    </Template>
+                                </RadzenGridColumn>*@
+                                <RadzenGridColumn TItem="Models.pLogs" Property="ExamId" Title="Exam">
+                                    <Template Context="data">
+                                        @data.Exam?.ExameName
+                                    </Template>
+                                    <FooterTemplate>
+                                        @{
+                                            int currentCount = 0;
+                                            if (LogsList != null)
+                                            {
+                                                currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                            }
+                                        }
+                                        <b>Showing </b>@currentCount<b> to </b>@(LogsList != null ? (LogsList.Count()+ currentCount)-1 : 0) <b> of </b> @TotalCount <b>entries</b>
+                                    </FooterTemplate>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.pLogs" Property="StudentId" Title="Student">
+                                    <Template Context="data">
+                                        @data.Student?.FirstName
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.pLogs" Property="CameraAccessFailed" Title="Camera Access Failed">
+                                    <Template Context="data">
+                                        @if (data.CameraAccessFailed)
+                                        {
+                                            <span class="text-danger">Yes</span>
+                                        }
+                                        else
+                                        {
+                                            <span>No</span>
+                                        }
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.pLogs" Property="Message" Title="Message">
+                                    <Template Context="data">
+                                        @data.Message
+                                    </Template>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.pLogs" Property="CreatedAt" Title="Created At">
+                                    <Template Context="data">
+                                        @data.CreatedAt
+                                    </Template>
+                                </RadzenGridColumn>
+                            </Columns>
+                        </RadzenGrid>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject StudentService studentService
+@inject LiveProctorService liveProctorService
+@using Microsoft.AspNetCore.Identity
+@inject IJSRuntime JsRuntime
+@inject IConfiguration Configuration
+@using Microsoft.Extensions.Configuration
+@code {
+
+    private string filterByDays;
+    int Count;
+    int PageSize;
+    int Skip;
+    int Top;
+    int TotalCount;
+    RadzenGrid<Models.pLogs> ordersGrid;
+    IList<ExamsSchedule.Models.pLogs> LogsList;
+    public string[] options = new string[] { "Last 5 Days", "Last 30 Days", "Last 90 Days" };
+    protected override async Task OnInitializedAsync()
+    {
+        spinnerService.Show();
+        PageSize = Convert.ToInt32(Configuration["pageSize"]);
+        LogsList = await liveProctorService.GetReportsLogDataAsync(filterByDays);
+        TotalCount = LogsList.Count();
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+    public async Task ShowData()
+    {
+        spinnerService.Show();
+        LogsList = await liveProctorService.GetReportsLogDataAsync(filterByDays);
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+
+}

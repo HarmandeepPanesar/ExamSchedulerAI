@@ -1,0 +1,216 @@
+﻿@page "/verifyexam"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Proctoring Report</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Proctoring Report</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="add-user-form">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card card-body">
+                        <EditForm Model="@viewModel" OnValidSubmit="HandleSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="row">
+                                <div class="col-4">
+                                    <div>
+                                        <label>Exams</label>
+                                        <RadzenDropDown AllowClear="true" AllowFiltering="false" TValue="int?" Placeholder="Select"
+                                                        TextProperty="ExameName"
+                                                        ValueProperty="ExamId"
+                                                        @bind-Value="viewModel.ExamId"
+                                                        Data="@ExamList"
+                                                        Style="width:100%"></RadzenDropDown>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div>
+                                        <label>Students</label>
+                                        <RadzenDropDown AllowClear="true" AllowFiltering="false" TValue="int?" Placeholder="Select"
+                                                        TextProperty="FirstName"
+                                                        ValueProperty="Id"
+                                                        @bind-Value="viewModel.StudentId"
+                                                        Data="@StudentList" Style="width:100%"></RadzenDropDown>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div>
+                                        <label>Status</label>
+                                        <RadzenDropDown AllowClear="true" AllowFiltering="false" TValue="int?" Placeholder="Select"
+                                                        TextProperty="ProctoringStatus"
+                                                        ValueProperty="EnumValue"
+                                                        @bind-Value="viewModel.StatusId"
+                                                        Data="@StatusList" Style="width:100%"></RadzenDropDown>
+                                    </div>
+                                </div>
+
+                                <div class="col-4">
+                                    <label>Duration</label>
+                                    <RadzenDropDown AllowClear="true" AllowFiltering="false" TValue="int" Placeholder="Select"
+                                                    TextProperty="Text"
+                                                    ValueProperty="Value"
+                                                    Data="@DurationList"
+                                                    Style="width:100%"
+                                                    Change="@(args=>ChangeDurationOption(args))"></RadzenDropDown>
+                                </div>
+                                <div class="col-4 mt-lg-4 mx-5">
+                                    <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">Submit</button>
+                                </div>
+                            </div>
+                        </EditForm>
+
+
+                        <div class="mt-4">
+                            <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                        AllowSorting="true" Data="@ProctoringStatusList" TItem="Models.DB.PExamStudentProctoringStatus">
+                                <Columns>
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StudentId" Title="Student Id">
+                                        <Template Context="data">
+                                            <a href="/verifystudentexam/@data.Id">STU-@data.StudentId</a>
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="FirstName" Title="First Name">
+                                        <Template Context="data">
+                                            @data.Student.FirstName
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="LastName" Title="Last Name">
+                                        <Template Context="data">
+                                            @data.Student.LastName
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Uniqueidentifier" Title="Exam Code" />
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="ExameName" Title="Exam Name">
+                                        <Template Context="data">
+                                            @data.Exam.ExameName
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="StartedAt" Title="Test Taken Date" />
+
+                                    <RadzenGridColumn TItem="Models.DB.PExamStudentProctoringStatus" Property="Id" Title="Flags" Filterable="false" Sortable="false" Width="100">
+                                        <Template Context="data">
+                                            @*@if(data.ExamStudents != null)
+                                                {
+                                                  @foreach (var item in data.ExamStudents)
+                                                   {
+                                                     <span class="badge badge-info">@item.Exam?.ExamName</span>
+                                                   }
+                                                }*@
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                    <!--<RadzenGridColumn TItem="Models.DB.PStudent" Property="Active" Title="Active" Width="100">
+                                    <Template Context="data">-->
+                                    @*@(data.Active ? "Yes" : "No")*@
+                                    <!--</Template>
+                                    </RadzenGridColumn>-->
+                                    @*<RadzenGridColumn TItem="Models.DB.PStudent" Property="Id" Title="Action" Filterable="false" Sortable="false" Width="60">
+                                            <Template Context="data">
+                                                <RadzenButton Icon="edit" Size="Radzen.ButtonSize.Small" Click="@(args=>editRow(data))" />
+                                                <RadzenButton Icon="delete" Size="Radzen.ButtonSize.Small" Click="@(args=>deleteRow(data))" />
+                                            </Template>
+                                        </RadzenGridColumn>*@
+                                </Columns>
+                            </RadzenGrid>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using ExamsSchedule.Models.DB
+@using System.ComponentModel.DataAnnotations;
+@inject StudentService studentService
+@inject ExamService examService
+@inject VerifyExamService VerifyExamService
+@code
+{
+    public PStudent student { get; set; }
+    public List<PExamStudentProctoringStatus> ProctoringStatusList { get; set; }
+    public List<PExam> ExamList { get; set; }
+    public List<PStudent> StudentList { get; set; }
+    public List<PProctoringEnum> StatusList { get; set; }
+    private List<RadzenSelectBarItem> DurationList = new List<RadzenSelectBarItem>();
+    //public int ExamId;
+    //public int StudentId;
+    //public int StatusId;
+
+    public class ViewMOdel
+    {
+        [Required]
+        [Display(Name = "Exam")]
+        public int? ExamId { get; set; }
+        [Required]
+        [Display(Name = "Student")]
+        public int? StudentId { get; set; }
+        [Required]
+        [Display(Name = "Status")]
+        public int? StatusId { get; set; }
+    }
+    public ViewMOdel viewModel = new ViewMOdel();
+    //public ViewMOdel viewModel { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        StudentList = await studentService.GetAllDataAsync();
+        ExamList = await examService.GetAllDataAsync();
+        StatusList = await examService.GetAllStatusAsync();
+
+        DurationList.Add(new RadzenSelectBarItem { Value = 0, Text = "Last 30 days" });
+        DurationList.Add(new RadzenSelectBarItem { Value = 1, Text = "Custom" });
+
+        StateHasChanged();
+    }
+
+    public void ChangeDurationOption(object value)
+    {
+
+    }
+
+    public async Task HandleEventSubmit()
+    {
+
+    }
+
+    public async Task HandleSubmit()
+    {
+        if (viewModel.ExamId.HasValue && viewModel.StudentId.HasValue && viewModel.StatusId.HasValue)
+        {
+            ProctoringStatusList = await VerifyExamService.GetAllDataAsync(viewModel.ExamId.Value, viewModel.StudentId.Value, viewModel.StatusId.Value);
+            StateHasChanged();
+
+        }
+    }
+}
+
+

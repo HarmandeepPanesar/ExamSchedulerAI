@@ -1,0 +1,239 @@
+﻿@page "/exams"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Exam List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Exams</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="row">
+                        <div class="col-6">
+                            <div>
+                                <RadzenTextBox @bind-Value="txtSearchExam"
+                                               Placeholder="Search Exam"
+                                               Style="margin-bottom: 20px; width: 400px;  margin-top: 10px; margin-left: 20px;" @onkeyup="@(e => InputKeyPressed(e))" />
+
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@FilterExams" Size="Radzen.ButtonSize.Medium"
+                                              Text="Search" Icon="search"></RadzenButton>
+
+                                @if (txtSearchExam != null)
+                                {
+                    <span>&nbsp;</span>
+                                    <RadzenButton Click="@ClearFilterExams" Size="Radzen.ButtonSize.Medium"
+                                                  Text="Clear" Icon="clear" ButtonStyle="ButtonStyle.Light"></RadzenButton>}
+                            </div>
+                            <div style="margin-left:20px;">
+                                @{ int currentCount = 0;
+                                    if (ExamList != null)
+                                    {
+                                        currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                    } }
+                                <b>Showing </b>@currentCount<b> to </b>@(ExamList != null ? (ExamList.Count()+ currentCount)-1 : 0) <b> of </b> @Count <b>entries</b>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div style="text-align:right; margin-bottom:10px; margin-top:10px; margin-right:20px;">
+                                <RadzenButton ButtonStyle="ButtonStyle.Secondary" Click="@ShowModal" Size="Radzen.ButtonSize.Medium" Text="Add New Record" Icon="add"></RadzenButton>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="card-body">
+
+                        <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive"
+                                    @ref="ordersGrid"
+                                    FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="@PageSize" Count="@Count"
+                                    AllowSorting="true" Data="@ExamList" TItem="Models.DB.PExam" ColumnWidth="200px" LoadData="@LoadData">
+                            <Columns>
+
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExameName" Title="Row #" Width="5%">
+                                    <Template Context="ExamName">
+                                        <Radzen.Blazor.RadzenLabel Text="@((ExamList.IndexOf(ExamName) + 1 + Skip).ToString())"></Radzen.Blazor.RadzenLabel>
+                                    </Template>
+                                </RadzenGridColumn>
+
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExameName" Title="Exam Name" Width="20%">
+                                    <Template Context="ExamName">
+                                        @ExamName.ExameName
+                                    </Template>
+                                    <FooterTemplate>
+                                        @{ int currentCount = 0;
+                                            if (ExamList != null)
+                                            {
+                                                currentCount = (ordersGrid.CurrentPage * PageSize) + 1;
+                                            } }
+                                        <b>Showing </b>@currentCount<b> to </b>@(ExamList != null ? (ExamList.Count()+ currentCount)-1 : 0) <b> of </b> @Count <b>entries</b>
+                                    </FooterTemplate>
+                                </RadzenGridColumn>
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExamDescription" Title="Exam Description" Width="20%"/>
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExamIdentifier1" Title="Exam Identifier1 (LMS Link)" Width="10%" />
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExamIdentifier2" Title="Exam Identifier2" Width="10%" />
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="StartDate" Title="Start Date" Width="5%"/>
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="EndDate" Title="End Date" Width="5%"/>
+
+
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExamId" Title="Total Student" Filterable="false" Sortable="false" Width="5%">
+                                    <Template Context="data">
+                                        @{ if (data.PExamStudent != null)
+                                            {
+                        <div>
+                            <h5><span class="badge badge-info" data-toggle="tooltip" title="@data.PExamStudent.Count">@data.PExamStudent.Count</span></h5>
+                        </div> }
+                                            else
+                                            {
+                        <div>
+                            <h5><span class="badge badge-info" data-toggle="tooltip" title="0">0</span></h5>
+                        </div> } }
+                                    </Template>
+                                </RadzenGridColumn>
+
+                                <RadzenGridColumn TItem="Models.DB.PExam" Property="ExamId" Title="Action" Filterable="false" Sortable="false" Width="5%">
+                                    <Template Context="data">
+                                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="edit" Size="ButtonSize.Small" Click="@(args=>editRow(data))" />
+                                        <RadzenButton ButtonStyle="ButtonStyle.Secondary" Icon="delete" Size="ButtonSize.Small" Click="@(args=>deleteRow(data))" />
+                                    </Template>
+                                </RadzenGridColumn>
+                            </Columns>
+                        </RadzenGrid>
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject ExamService ExamService
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject IJSRuntime JsRuntime
+@code
+{ int Count;
+    int PageSize;
+    int Skip;
+    int Top;
+    string PageCountDisplay;
+    int TotalCount;
+
+    RadzenGrid<Models.DB.PExam> ordersGrid;
+    public Models.DB.PExam exam;
+    public int pageSize { get; set; }
+    List<ExamsSchedule.Models.DB.PExam> ExamList;
+    //private List<Models.DB.PExam> ExamList = new List<Models.DB.PExam>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        spinnerService.Show();
+        PageSize = Convert.ToInt32(Configuration["pageSize"]);
+        spinnerService.Hide();
+        StateHasChanged();
+    }
+
+    public string txtSearchExam { get; set; }
+    public async Task ClearFilterExams()
+    {
+        txtSearchExam = null;
+        await GetExamListAsync(txtSearchExam);
+    }
+
+    public async Task FilterExams()
+    {
+        Skip = 0;
+        await GetExamListAsync(txtSearchExam);
+    }
+
+    public async Task GetExamListAsync(string filter = null)
+    {
+        ExamList = await ExamService.GetAllDataAsync(Skip, Top, filter);
+        Count = (await ExamService.GetAllExamsCount());
+        PageCountDisplay = $"Total Exams : {Count}";
+    }
+
+    protected async System.Threading.Tasks.Task LoadData(LoadDataArgs args)
+    {
+        Skip = args.Skip.Value;
+        Top = args.Top.Value;
+        await GetExamListAsync();
+    }
+    protected async Task InputKeyPressed(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            //call login or what ever you want when user pressed Enter
+            await FilterExams();
+        }
+    }
+    async Task ShowModal()
+    {
+        var result = await dialogService.OpenAsync<DialogExampage>("Add New Record", null
+        , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetExamListAsync();
+
+        }
+    }
+
+    public async Task editRow(Models.DB.PExam exam)
+    {
+        var param = new Dictionary<string, object>();
+        param.Add("SelectedExam", exam);
+        var result = await dialogService.OpenAsync<DialogExampage>("Add New Record", param
+            , new DialogOptions() { Width = "450px" });
+        if (result == true)
+        {
+            await GetExamListAsync();
+        }
+    }
+
+    public async Task deleteRow(Models.DB.PExam exam)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure ,you want to delete?");
+        if (confirmed)
+        {
+            spinnerService.Show();
+            await ExamService.DeleteExam(exam);
+            await GetExamListAsync();
+            spinnerService.Hide();
+            toastService.ShowSuccess("Record is deleted Successfully");
+        }
+    } }
+@if (ExamList == null || ExamList.Count() == 0)
+{
+<style>
+    .file-container .ui-datatable-scrollable-header-box tr th.ui-state-default:first-child,
+    .file-container .ui-datatable-scrollable-body tr td:first-child,
+    .file-container .ui-datatable-scrollable-footer-box tr td:first-child {
+        width: 40px !important;
+    }
+</style>
+}
+
+

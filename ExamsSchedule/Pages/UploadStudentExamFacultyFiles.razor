@@ -1,0 +1,125 @@
+﻿@page "/UploadStudentExamFaculty"
+@using ExamsSchedule.Models.DB
+@using ExamsSchedule.Models
+@using Radzen.Blazor
+@using ExamsSchedule.Services
+@using Radzen
+@using Microsoft.AspNetCore.Components.Forms
+@using System.ComponentModel.DataAnnotations
+@using System.IO
+@using System.Linq
+
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Upload Student/Exam/Faculty</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Upload Student/Exam/Faculty</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+
+                        <div class="text-right">
+                            <p>You can download same file from <a href="/ImportDataFiles/StudentExamFaculyMappingCSV.csv" target="_blank">here</a></p>
+                        </div>
+                        <p>
+                            <InputFile OnChange="@OnInputFileChange" />
+                            <input class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button" @onclick="uploadData" disabled="@(imageFile== null)" value="Upload Data" />
+                        </p>
+
+                        @if (StudentExamUploadFileList != null && StudentExamUploadFileList.Count() > 0)
+                        {
+                            <div class="text-success">
+                                <b>Data Uploaded Successfully.</b>
+                            </div>
+                            <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                        AllowSorting="true" Data="@StudentExamUploadFileList" TItem="ExamsSchedule.Models.StudentExamUploadFile">
+                                <Columns>
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="ExameName" Title="ExameName" />
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="ExamIdentifier1" Title="ExamIdentifier1" />
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="ExamIdentifier2" Title="ExamIdentifier2" />
+
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="FirstName" Title="Student Name">
+                                        <Template Context="data">
+                                            @data.FirstName @data.LastName
+                                        </Template>
+                                    </RadzenGridColumn>
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="Email" Title="Email">
+                                        <Template Context="data">
+                                            @data.StudentEmail
+                                        </Template>
+                                    </RadzenGridColumn>
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="StudentIdentity" Title="Student Identity" />
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="StudentUniqueId" Title="Student Unique Id" />
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.StudentExamUploadFile" Property="FacultyEmail" Title="Faculty Email" />
+
+                                </Columns>
+                            </RadzenGrid>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@inject StudentFacultyService studentFacultyService
+@inject SpinnerService spinnerService
+
+@code {
+    private IList<string> imageDataUrls = new List<string>();
+    public IBrowserFile imageFile;
+    private List<StudentExamUploadFile> StudentExamUploadFileList = new List<StudentExamUploadFile>();
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 3;
+        foreach (IBrowserFile imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            imageFile = imageFile1;
+        }
+    }
+
+    public async Task uploadData()
+    {
+        if (imageFile != null)
+        {
+            spinnerService.Show();
+            StudentExamUploadFileList = await studentFacultyService.ImportData(imageFile);
+            StateHasChanged();
+            spinnerService.Hide();
+        }
+    }
+}
+<style>
+    ::-webkit-file-upload-button {
+        cursor: pointer;
+        background-color: #479cc8;
+        color: #fff;
+        -webkit-appearance: button;
+        border-color: #479cc8;
+        box-shadow: none;
+        font-size: 1.0625rem;
+        font-weight: normal;
+        padding: 0 2rem;
+        height: 2.1875rem;
+        border-radius: 4px;
+        border: none;
+        outline: none;
+        line-height: initial;
+    }
+</style>

@@ -1,0 +1,169 @@
+﻿@page "/dialogmessagepage/{studentId:int}/{ExamId:int}"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using System;
+@using TimeZoneConverter;
+@inject NavigationManager MyNavigationManager
+@{
+    string CurrentUrl = MyNavigationManager.Uri;
+}
+@if (CurrentUrl.Contains("/liveproctor"))
+{
+    <EditForm Model="@Model" OnValidSubmit="SaveData">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="row">
+            <div class="col-9">
+
+                <RadzenRadioButtonList @bind-Value=@value TValue="int">
+                    <Items>
+                        <RadzenRadioButtonListItem Text="Red" Value="1" />
+                        <RadzenRadioButtonListItem Text="Orange" Value="2" />
+                        <RadzenRadioButtonListItem Text="Yellow" Value="3" />
+                    </Items>
+                </RadzenRadioButtonList>
+
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-9" style="margin-bottom:10px;">
+
+                <RadzenTextArea class="form-control" @bind-Value="@Model.Message" placeholder="Input your Message Here"></RadzenTextArea>
+            </div>
+            <div class="col-md-3" style="margin-top: 10px;">
+                <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit" style="width: inherit;">
+                    Send
+                </button>
+            </div>
+        </div>
+    </EditForm>
+}
+<RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive"
+            FilterMode="Radzen.FilterMode.Advanced"
+            AllowPaging="true" PageSize="10" Data="@MessageList"
+            AllowSorting="false" TItem="Models.DB.LiveProctorMessage">
+    <Columns>
+        <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="Message" Title="Message">
+            <Template Context="data">
+                @data.Message
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="SendBy" Title="Sent By" Width="180px">
+            <Template Context="data">
+                @if (data.User != null)
+                    @data.User.Email
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="SendDate" Title="Date" Width="180px">
+            <Template Context="data">
+                @ConvertDateToRegion(data.SendDate)
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="Status" Title="Status" Width="120px">
+            <Template Context="data">
+                @if (data.Status == 0)
+                {
+                    <span>Pending</span>
+                }
+                else if (data.Status == 1)
+                {
+                    <span>Read</span>
+                }
+                else if (data.Status == 3)
+                {
+                    <span>Approve</span>
+                }
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="Models.DB.LiveProctorMessage" Property="WarningType" Title="Warning Type" Width="120px">
+            <Template Context="data">
+                @if (data.WarningType == 1)
+                {
+                    <span class="badge" style="background-color: red; color: white;">Red</span>
+                }
+                else if (data.WarningType == 2)
+                {
+                    <span class="badge" style="background-color: orange">Orange</span>
+                }
+                else
+                {
+                    <span class="badge" style="background-color: yellow">Yellow</span>
+                }
+
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+@using ExamsSchedule.Services
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject SearchStudentService searchStudentService
+@using Blazored.Toast.Services
+@using Radzen
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Microsoft.AspNetCore.Identity
+@code {
+
+
+    [Parameter]
+    public long id { get; set; }
+
+    [Parameter]
+    public int examId { get; set; }
+
+    [Parameter]
+    public string filter { get; set; }
+
+    [Parameter]
+    public int studentId { get; set; }
+
+    [Parameter]
+    public string sessionId { get; set; }
+
+    public string DateRegion { get; set; }
+
+    int value = 1;
+
+    public Models.DB.LiveProctorMessage Model = new Models.DB.LiveProctorMessage();
+
+    private List<Models.DB.LiveProctorMessage> MessageList = new List<Models.DB.LiveProctorMessage>();
+
+    public string ConvertDateToRegion(DateTime date)
+    {
+        TimeZoneInfo tzi = TZConvert.GetTimeZoneInfo(DateRegion);
+        DateTime cstTime = TimeZoneInfo.ConvertTimeFromUtc(date, tzi);
+        return cstTime.ToString("MM/dd/yyyy hh:mm:ss");
+    }
+
+    //private List<EventListViewModel> list = new List<EventListViewModel>();
+    protected override async Task OnInitializedAsync()
+    {
+        DateRegion = Configuration["DateRegion"];
+        MessageList = await searchStudentService.GetMessageLogsDataAsync(id);
+        StateHasChanged();
+    }
+
+    public async Task SaveData()
+    {
+        if (Model.Id == 0)
+        {
+            var result = await searchStudentService.SaveMessageDataAsync(id, Model, value);
+            toastService.ShowSuccess("Message Sent Successfully");
+
+            MessageList = await searchStudentService.GetMessageLogsDataAsync(id);
+            StateHasChanged();
+
+            Model = new Models.DB.LiveProctorMessage();
+
+        }
+    }
+
+
+}
+
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1038;
+    }
+</style>

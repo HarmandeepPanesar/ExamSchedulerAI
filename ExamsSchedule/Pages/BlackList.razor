@@ -1,0 +1,202 @@
+﻿@page "/BlackList"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Black List</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Black List</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+<section class="content message-report-container">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <EditForm Model="@blackList" OnValidSubmit="HandleSubmit">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="lbl-filter">Name</label>
+                                        <div class="form-group">
+                                            <RadzenTextBox @bind-Value="blackList.Name" Placeholder="Name" Style="width: 100%;" />
+                                        </div>
+
+
+                                    </div>
+                                    <div class="col-4  mt-lg-4 mx-5">
+                                        <label>Upload Image<span class="required-sign">*</span></label>
+                                        <div class="form-group">
+
+                                            <InputFile id="file-upload-button" @bind-Value="blackList.UploadPicture" OnChange="@OnInputImageChange" />
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <label class="lbl-filter">Notes</label>
+                                        <div class="form-group">
+                                            <RadzenTextArea @bind-Value="blackList.Notes" Placeholder="Notes" Style="width:100%;" />
+                                        </div>
+                                    </div>
+                                    <div class="col-4 mt-5 lg-4 mx-5">
+                                        <button class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="submit">Submit</button>
+                                    </div>
+                                </div>
+                            </EditForm>
+                            <RadzenGrid Data="@blacklist" AllowSorting="true" AllowFiltering="false" AllowPaging="true" TItem="Models.DB.BlackList">
+                                <Columns>
+                                    <RadzenGridColumn TItem="Models.DB.BlackList" Property="Name" Title="Name" Width="15%">
+                                        <Template Context="data">
+                                            @if (data.UploadPicture != null)
+                                            {
+                                                <a @onclick="@(args=>ShowImageModal(data.UploadPicture))" style="cursor: pointer;">@data.Name&nbsp;&nbsp;<i class="fas fa-image"></i></a>
+                                            }
+                                            else
+                                            {
+                                                @data.Name
+                                            }
+                                        </Template>
+                                    </RadzenGridColumn>
+                                    <RadzenGridColumn TItem="Models.DB.BlackList" Property="Notes" Title="Notes" Width="15%">
+                                        <Template Context="data">
+                                            @data.Notes
+                                        </Template>
+                                    </RadzenGridColumn>
+                                    <RadzenGridColumn TItem="Models.DB.BlackList" Property="AddedOn" Title="Added On" Width="15%">
+                                        <Template Context="data">
+                                            @data.AddedOn
+                                        </Template>
+                                    </RadzenGridColumn>
+                                    <RadzenGridColumn TItem="Models.DB.BlackList" Property="Id" Title="Action" Filterable="false" Sortable="false" Width="7%">
+                                        <Template Context="data">
+                                            <RadzenButton ButtonStyle="ButtonStyle.Secondary"  Icon="delete" Size="Radzen.ButtonSize.Small" Click="@(args => deleteRow(data))" />
+                                        </Template>
+                                    </RadzenGridColumn>
+                                </Columns>
+                            </RadzenGrid>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@inject SpinnerService spinnerService
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject IJSRuntime JsRuntime
+@inject BlackListService blackListService
+@code {
+    string img = "";
+    public string blobBaseURL { get; set; }
+    public IList<IBrowserFile> imageFile = new List<IBrowserFile>();
+    public ExamsSchedule.Models.DB.BlackList blackList = new ExamsSchedule.Models.DB.BlackList();
+    public List<ExamsSchedule.Models.DB.BlackList> blacklist = new List<Models.DB.BlackList>();
+    private async Task OnInputImageChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 20;
+        foreach (var imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            imageFile.Add(imageFile1);
+        }
+    }
+    public async Task HandleSubmit()
+    {
+        if (blackList.Id == 0 && imageFile != null)
+        {
+            spinnerService.Show();
+            var result = await blackListService.AddAsync(blackList, imageFile);
+            toastService.ShowSuccess("New Record is Added Successfully");
+            await GetListAsync();
+            spinnerService.Hide();
+            StateHasChanged();
+
+        }
+    }
+    public async Task deleteRow(Models.DB.BlackList record)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure,you want to delete?");
+        if (confirmed)
+        {
+            spinnerService.Show();
+            await blackListService.Delete(record);
+            await GetListAsync();
+            spinnerService.Hide();
+            toastService.ShowSuccess("Record is deleted Successfully");
+            StateHasChanged();
+        }
+    }
+    public async Task ShowImageModal(string imageName)
+    {
+
+        var param = new Dictionary<string, object>();
+        param.Add("imageName", imageName);
+        var result = await dialogService.OpenAsync<DialogStudentImagePage>("Student Image", param, new DialogOptions() { Width = "600px" });
+        if (result == true)
+        {
+            //await GetUsersAsync();
+            StateHasChanged();
+
+        }
+    }
+    //protected async System.Threading.Tasks.Task LoadData(LoadDataArgs args)
+    //{
+    //    //Skip = args.Skip.Value;
+    //    //Top = args.Top.Value;
+    //    await GetListAsync();
+    //    StateHasChanged();
+    //}
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+        //if (SelectedStudent != null)
+        //{
+        //    img = blobBaseURL + "/studentidentity/" + SelectedStudent.ImageName;
+        //    studentModel = SelectedStudent;
+        //}
+        blacklist = await blackListService.GetAllAsync();
+        StateHasChanged();
+    }
+    public async Task GetListAsync()
+    {
+        blacklist = await blackListService.GetAllAsync();
+        StateHasChanged();
+    }
+}
+<style>
+    ::-webkit-file-upload-button {
+        cursor: pointer;
+        background-color: #479cc8;
+        color: #fff;
+        -webkit-appearance: button;
+        border-color: #479cc8;
+        box-shadow: none;
+        font-size: 1.0625rem;
+        font-weight: normal;
+        padding: 0 2rem;
+        height: 2.1875rem;
+        border-radius: 4px;
+        border: none;
+        outline: none;
+        line-height: initial;
+    }
+</style>

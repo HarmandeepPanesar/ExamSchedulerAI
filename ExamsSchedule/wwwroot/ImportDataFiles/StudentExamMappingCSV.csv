@@ -1,0 +1,3 @@
+ExameName,ExamIdentifier1,ExamIdentifier2,StudentEmail,StudentUniqueId,FirstName,LastName,StudentIdentity
+Physics,1,1,test@email.com,1,test,test,1
+Math,2,2,test1@email.com,2,test1,test,2

@@ -1,0 +1,71 @@
+﻿@page "/dialogevents/{studentId:int}/{ExamId:int}"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+
+
+<BSCarousel NumberOfItems="@EventList.Count">
+    <BSCarouselIndicators NumberOfItems="@EventList.Count" />
+    <div class="carousel-inner">
+        @for (int i = 0; i < EventList.Count; i++)
+        {
+            string img = blobBaseURL + "/save-image-blob/" + @EventList[i].FileName;
+            <BSCarouselItem src="@img" alt="@EventList[i].FileName" />
+        }
+    </div>
+    <BSCarouselControl CarouselDirection="CarouselDirection.Previous" NumberOfItems="@EventList.Count" />
+    <BSCarouselControl CarouselDirection="CarouselDirection.Next" NumberOfItems="@EventList.Count" />
+</BSCarousel>
+
+@using ExamsSchedule.Services
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@inject SearchStudentService searchStudentService
+@using Blazored.Toast.Services
+@using Radzen
+@using Microsoft.AspNetCore.Identity
+@code {
+    [Parameter]
+    public long id { get; set; }
+
+    [Parameter]
+    public int examId { get; set; }
+
+    [Parameter]
+    public string sessionId { get; set; }
+
+    [Parameter]
+    public string filter { get; set; }
+
+    public string blobBaseURL { get; set; }
+
+    [Parameter]
+    public int studentId { get; set; }
+    private List<Models.DB.PEvents> EventList = new List<Models.DB.PEvents>();
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            EventList = await searchStudentService.GetEvents(studentId, examId, sessionId, filter);
+            StateHasChanged();
+        }
+    }
+
+    public async Task Approve(long id, int studentId, int examId, int status)
+    {
+        spinnerService.Show();
+        await searchStudentService.ApproveAsync(id, studentId, examId, status);
+        toastService.ShowSuccess("Status updated Successfully");
+        spinnerService.Hide();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+         //StateHasChanged();
+    }
+
+}

@@ -1,0 +1,29 @@
+﻿@page "/dialogStudentImage"
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using ExamsSchedule.Services
+
+
+<div class="text-center"><img src="@img" alt="@imageName" style="max-width: 560px; " /></div>
+
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@code {
+    [Parameter]
+    public string imageName { get; set; }
+
+    public string blobBaseURL { get; set; }
+
+    string img = "";
+    protected override async Task OnInitializedAsync()
+    {
+        blobBaseURL = Configuration["blobBaseURL"];
+        img = blobBaseURL + "/studentidentity/" + @imageName;
+        StateHasChanged();
+    }
+}
+<style>
+    .ui-dialog-wrapper {
+        z-index: 1038;
+    }
+</style>

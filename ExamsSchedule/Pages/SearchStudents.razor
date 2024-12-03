@@ -1,0 +1,137 @@
+﻿@*@page "/liveproctor"
+
+@using Radzen.Blazor
+@using ExamsSchedule.Models
+@using TimeZoneConverter;
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Live Proctor</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Live Proctor</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <RadzenButton class="btn-toggler ml-2" Text="Show Video" Style="float:right;"></RadzenButton>
+                                <RadzenButton id="BtnRefresh" class="btn-refresh" Click="@(()=> RefreshGrid(false))" Size="Radzen.ButtonSize.Medium" Text="Refresh" Icon="refresh" Style="display:none;"></RadzenButton>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <StudentExamProctorComponent SearchStudentList="SearchStudentList"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@inject DialogService dialogService
+@inject IToastService toastService
+@inject SpinnerService spinnerService
+@inject ExamStudentService ExamStudentService
+@inject StudentService studentService
+@inject TeacherService teacherService
+@inject ExamService ExamService
+@inject SearchStudentService searchStudentService
+@inject StudentFacultyService studentFacultyService
+@inject IJSRuntime JsRuntime
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Blazored.Toast.Services
+@using Radzen
+@using ExamsSchedule.Services
+@using Microsoft.AspNetCore.Identity
+
+@code
+{
+    private int ExamId;
+    private int studentId;
+    private List<Models.DB.PExamStudentProctoringStatus> SearchStudentList = new List<Models.DB.PExamStudentProctoringStatus>();
+    List<string> SessionIds = new List<string>();
+
+    public string videoURL { get; set; }
+    public int mytest { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        videoURL = Configuration["videoURL"];
+        ExamId = 0;
+        studentId = 0;
+        spinnerService.Show();
+        var record = await searchStudentService.GetDataAsync(studentId, ExamId, null, true);
+        SearchStudentList = record;
+        spinnerService.Hide();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JsRuntime.InvokeAsync<object>("refreshGrid");
+        }
+    }
+
+    public async Task RefreshGrid(bool showLoader = false)
+    {
+        if (showLoader)
+        {
+            spinnerService.Show();
+        }
+
+        var record = await searchStudentService.GetDataAsync(studentId, ExamId, null, true);
+        SearchStudentList = record;
+        if (showLoader)
+        {
+            spinnerService.Hide();
+        }
+    }
+
+    public async Task CloseVideomodal(long id, string sessionId)
+    {
+            await searchStudentService.UpdateVideoStatus(sessionId, false);
+            SessionIds.Remove(sessionId);
+            StateHasChanged();
+    }
+
+}
+
+<style>
+    a.badge {
+        color: white !important;
+        font-size: 12px;
+    }
+
+    .btn-refresh {
+        float: right;
+        margin-bottom: 12px;
+    }
+
+    .video-block {
+        margin-bottom: 8px;
+        padding: 10px;
+        border: 1px solid #ada3a3;
+        border-radius: 10px;
+        margin-top: 10px;
+        margin-right: 14px;
+    }
+</style>*@

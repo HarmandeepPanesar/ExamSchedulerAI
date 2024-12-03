@@ -1,0 +1,119 @@
+﻿@page "/studentImages"
+@using Blazored.Toast.Services
+@using ExamsSchedule.Models.DB
+@using ExamsSchedule.Models
+@using Radzen.Blazor
+
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1>Student Images</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item">Student Images</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        @*<div class="text-right">
+                            <p>You can download same file from <a href="#" target="_blank">here</a></p>
+                        </div>*@
+                        <p>
+                            <InputFile OnChange="@OnInputImageChange" multiple />
+                            <input class="ui-button ui-button-md ui-widget ui-state-default ui-corner-all btn-secondary" type="button" @onclick="uploadImageData" value="Upload Data" />
+                        </p>
+                        
+                        @if (listIdentity != null && listIdentity.Count() > 0)
+                        {
+                            <RadzenGrid AllowFiltering="true" FilterCaseSensitivity="Radzen.FilterCaseSensitivity.CaseInsensitive" FilterMode="Radzen.FilterMode.Advanced" AllowPaging="true" PageSize="4"
+                                        AllowSorting="true" Data="@listIdentity" TItem="ExamsSchedule.Models.BulkStudentImageViewModel">
+                                <Columns>
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.BulkStudentImageViewModel" Property="ImageName" Title="Image Name" />
+
+                                    <RadzenGridColumn TItem="ExamsSchedule.Models.BulkStudentImageViewModel" Property="Id" Title="IsSaved">
+                                        <Template Context="data">
+                                            @if (data.IsSaved)
+                                            {
+                                                <div class="text-success">Image Saved Sucessfully</div>
+                                            }
+                                            else
+                                            {
+                                                <div class="text-danger">Student Not Found</div>
+                                            }
+                                        </Template>
+                                    </RadzenGridColumn>
+
+                                </Columns>
+                            </RadzenGrid>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+@inject IToastService toastService
+@inject SearchStudentService searchStudentService
+@using Microsoft.WindowsAzure;
+@using Microsoft.WindowsAzure.Storage;
+@using Microsoft.WindowsAzure.Storage.Blob;
+@using ExamsSchedule.Services
+@inject SpinnerService spinnerService
+@code {
+    private IList<string> imageDataUrls = new List<string>();
+    public IList<IBrowserFile> imageFile = new List<IBrowserFile>();
+    public List<BulkStudentImageViewModel> listIdentity = new List<BulkStudentImageViewModel>();
+
+
+    private async Task OnInputImageChange(InputFileChangeEventArgs e)
+    {
+        var maxAllowedFiles = 400;
+        foreach (var imageFile1 in e.GetMultipleFiles(maxAllowedFiles))
+        {
+            imageFile.Add(imageFile1);
+        }
+    }
+
+    public async Task uploadImageData()
+    {
+        if (imageFile != null)
+        {
+            spinnerService.Show();
+            listIdentity = await searchStudentService.UploadToBlob(imageFile);
+            StateHasChanged();
+            spinnerService.Hide();
+        }
+        
+
+        spinnerService.Hide();
+    }
+}
+<style>
+    ::-webkit-file-upload-button {
+        cursor: pointer;
+        background-color: #479cc8;
+        color: #fff;
+        -webkit-appearance: button;
+        border-color: #479cc8;
+        box-shadow: none;
+        font-size: 1.0625rem;
+        font-weight: normal;
+        padding: 0 2rem;
+        height: 2.1875rem;
+        border-radius: 4px;
+        border: none;
+        outline: none;
+        line-height: initial;
+    }
+</style>
