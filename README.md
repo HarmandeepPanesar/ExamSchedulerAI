@@ -8,3 +8,5 @@ Similar Pages like -  Exam, Student, Proctor Setups
 <img width="959" alt="image" src="https://github.com/user-attachments/assets/afeba83c-ff0a-44b3-9199-88850ed645dc">
 The above project aslo includes mapping bwtween the Students and Exams , Teachers & students , mapping of Students and Faculty , etc
 <img width="959" alt="image" src="https://github.com/user-attachments/assets/5622c585-8a55-4678-a0d5-eeadbfe21526">
+Search Students using - exam, dates, days
+<img width="959" alt="image" src="https://github.com/user-attachments/assets/9f8aa169-fae4-4199-8b21-1f8c4f92e22d">
